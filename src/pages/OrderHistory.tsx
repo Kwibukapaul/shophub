@@ -159,7 +159,9 @@ export default function OrderHistory() {
                   <div className="mt-5">
                     <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       <span>Progress</span>
-                      <span>{Math.round(getOrderProgressPercent(order.status))}%</span>
+                      <span>
+                        {Math.round(getOrderProgressPercent(order.status))}%
+                      </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                       <div
@@ -168,7 +170,9 @@ export default function OrderHistory() {
                             ? "bg-red-500 dark:bg-red-600"
                             : "bg-blue-600 dark:bg-blue-700"
                         }`}
-                        style={{ width: `${getOrderProgressPercent(order.status)}%` }}
+                        style={{
+                          width: `${getOrderProgressPercent(order.status)}%`,
+                        }}
                       />
                     </div>
                   </div>
