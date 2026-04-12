@@ -1,230 +1,276 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/useAuth";
 import { CartItem, Product } from "../types";
 import { Trash2, ChevronLeft, ShoppingCart } from "lucide-react";
-import SafeImage from "../components/SafeImage";
+import { usePersistentQuery } from "../hooks/usePersistentQuery";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
+import { useCartStore } from "../stores/useCartStore";
 
 interface CartPageProps {
   onNavigate: (page: string) => void;
 }
 
+type CartRow = CartItem & { product: Product | null };
+
 export default function CartPage({ onNavigate }: CartPageProps) {
   const { session } = useAuth();
-  const [cartItems, setCartItems] = useState<
-    (CartItem & { product: Product })[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  const isOnline = useOnlineStatus();
+  const setItemCount = useCartStore((state) => state.setItemCount);
+  const clearCart = useCartStore((state) => state.clearCart);
+  const cartQuery = usePersistentQuery<CartRow[]>({
+    queryKey: `cart:${session?.user.id || "guest"}`,
+    enabled: Boolean(session?.user.id),
+    staleTimeMs: 15 * 1000,
+    fallbackError: "Unable to load your cart.",
+    initialData: [],
+    fetcher: async () => {
+      const { data, error } = await supabase
+        .from("cart_items")
+        .select("*, product:products(*)")
+        .eq("user_id", session!.user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data || []) as CartRow[];
+    },
+  });
 
   useEffect(() => {
     if (!session) {
       onNavigate("login");
+    }
+  }, [onNavigate, session]);
+
+  const cartItems = cartQuery.data || [];
+
+  useEffect(() => {
+    if (!session?.user.id) {
+      clearCart();
       return;
     }
 
-    const fetchCart = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("cart_items")
-          .select("*, product:products(*)")
-          .eq("user_id", session.user.id);
-
-        if (error) throw error;
-        setCartItems(data || []);
-      } catch (err) {
-        console.error("Error fetching cart:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
-  }, [session, onNavigate]);
+    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    setItemCount(totalQuantity);
+  }, [cartItems, clearCart, session?.user.id, setItemCount]);
 
   const handleRemoveItem = async (cartItemId: string) => {
     try {
+      cartQuery.setData((items) => (items || []).filter((item) => item.id !== cartItemId));
+
       const { error } = await supabase
         .from("cart_items")
         .delete()
         .eq("id", cartItemId);
 
-      if (error) throw error;
-      setCartItems(cartItems.filter((item) => item.id !== cartItemId));
-    } catch (err) {
-      console.error("Error removing item:", err);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error removing item:", error);
+      cartQuery.setData(cartItems);
     }
   };
 
-  const handleUpdateQuantity = async (
-    cartItemId: string,
-    newQuantity: number
-  ) => {
+  const handleUpdateQuantity = async (cartItemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      handleRemoveItem(cartItemId);
+      await handleRemoveItem(cartItemId);
       return;
     }
 
     try {
+      cartQuery.setData((items) =>
+        (items || []).map((item) =>
+          item.id === cartItemId ? { ...item, quantity: newQuantity } : item,
+        ),
+      );
+
       const { error } = await supabase
         .from("cart_items")
         .update({ quantity: newQuantity })
         .eq("id", cartItemId);
 
-      if (error) throw error;
-      setCartItems(
-        cartItems.map((item) =>
-          item.id === cartItemId ? { ...item, quantity: newQuantity } : item
-        )
-      );
-    } catch (err) {
-      console.error("Error updating quantity:", err);
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      cartQuery.setData(cartItems);
     }
   };
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.product?.price || 0) * item.quantity,
-    0
+    0,
   );
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
 
-  if (loading) {
+  if (cartQuery.isLoading && cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <button
           onClick={() => onNavigate("home")}
-          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-8 font-medium"
+          className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         >
           <ChevronLeft size={20} />
           Continue Shopping
         </button>
 
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          Shopping Cart
-        </h1>
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Shopping Cart
+          </h1>
+          {cartQuery.isFetching && cartItems.length > 0 && (
+            <span className="text-sm text-gray-500">Refreshing...</span>
+          )}
+        </div>
 
-        {cartItems.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700">
+        {cartQuery.error && cartItems.length === 0 ? (
+          <div className="rounded-lg border border-red-200 bg-white p-8 text-center shadow dark:border-red-800 dark:bg-gray-800">
+            <p className="mb-4 text-red-600 dark:text-red-300">{cartQuery.error}</p>
+            <button
+              type="button"
+              onClick={() => void cartQuery.refetch()}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white"
+            >
+              Retry
+            </button>
+          </div>
+        ) : cartItems.length === 0 ? (
+          <div className="rounded-lg border border-gray-200 bg-white py-16 text-center shadow dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
             <ShoppingCart
-              className="mx-auto text-gray-400 dark:text-gray-500 mb-4"
+              className="mx-auto mb-4 text-gray-400 dark:text-gray-500"
               size={48}
             />
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
+            <p className="mb-4 text-lg text-gray-600 dark:text-gray-400">
               Your cart is empty
             </p>
             <button
               onClick={() => onNavigate("home")}
-              className="bg-blue-600 dark:bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-medium"
+              className="rounded-lg bg-blue-600 px-6 py-2 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
             >
               Start Shopping
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 flex gap-6 border border-gray-200 dark:border-gray-700"
+          <>
+            {cartQuery.error && (
+              <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                <span>{cartQuery.error}</span>
+                <button
+                  type="button"
+                  onClick={() => void cartQuery.refetch()}
+                  className="rounded border border-amber-300 px-3 py-1 font-medium hover:bg-amber-100"
                 >
-                  {item.product?.image_urls && item.product.image_urls[0] && (
-                    <SafeImage
-                      src={item.product.image_urls[0]}
-                      alt={item.product.name}
-                      className="w-24 h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                    />
-                  )}
+                  Retry
+                </button>
+              </div>
+            )}
 
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 dark:text-white mb-2">
-                      {item.product?.name}
-                    </h3>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                      RWF {(item.product?.price || 0).toLocaleString()}
-                    </p>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="space-y-4 lg:col-span-2">
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex gap-6 rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50"
+                  >
+                    {isOnline && item.product?.image_urls?.[0] ? (
+                      <img
+                        src={item.product.image_urls[0]}
+                        alt={item.product.name}
+                        className="h-24 w-24 rounded-lg border border-gray-200 object-cover dark:border-gray-700"
+                      />
+                    ) : (
+                      <div className="h-24 w-24 rounded-lg border border-gray-200 bg-gradient-to-br from-gray-200 to-gray-300 dark:border-gray-700 dark:from-gray-700 dark:to-gray-800" />
+                    )}
 
-                    <div className="flex items-center gap-3 border border-gray-300 dark:border-gray-600 rounded-lg w-fit bg-white dark:bg-gray-700">
+                    <div className="flex-1">
+                      <h3 className="mb-2 font-bold text-gray-900 dark:text-white">
+                        {item.product?.name}
+                      </h3>
+                      <p className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
+                        RWF {(item.product?.price || 0).toLocaleString()}
+                      </p>
+
+                      <div className="flex w-fit items-center gap-3 rounded-lg border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700">
+                        <button
+                          onClick={() => void handleUpdateQuantity(item.id, item.quantity - 1)}
+                          className="px-3 py-1 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                        >
+                          -
+                        </button>
+                        <span className="px-3 font-bold text-gray-900 dark:text-white">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => void handleUpdateQuantity(item.id, item.quantity + 1)}
+                          className="px-3 py-1 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="mb-4 text-gray-600 dark:text-gray-400">
+                        RWF {((item.product?.price || 0) * item.quantity).toLocaleString()}
+                      </p>
                       <button
-                        onClick={() =>
-                          handleUpdateQuantity(item.id, item.quantity - 1)
-                        }
-                        className="px-3 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                        onClick={() => void handleRemoveItem(item.id)}
+                        className="flex items-center gap-2 font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                       >
-                        −
-                      </button>
-                      <span className="px-3 font-bold text-gray-900 dark:text-white">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleUpdateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="px-3 py-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                      >
-                        +
+                        <Trash2 size={18} />
+                        Remove
                       </button>
                     </div>
                   </div>
-
-                  <div className="text-right">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      RWF{" "}
-                      {(
-                        (item.product?.price || 0) * item.quantity
-                      ).toLocaleString()}
-                    </p>
-                    <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium flex items-center gap-2"
-                    >
-                      <Trash2 size={18} />
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6 h-fit border border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                Order Summary
-              </h2>
-
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>Subtotal</span>
-                  <span>RWF {subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>Tax (18%)</span>
-                  <span>RWF {tax.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>Shipping</span>
-                  <span>Calculated at checkout</span>
-                </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between text-lg font-bold text-gray-900 dark:text-white">
-                  <span>Total</span>
-                  <span>RWF {total.toLocaleString()}</span>
-                </div>
+                ))}
               </div>
 
-              <button
-                onClick={() => onNavigate("checkout")}
-                className="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-bold"
-              >
-                Proceed to Checkout
-              </button>
+              <div className="h-fit rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
+                <h2 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+                  Order Summary
+                </h2>
+
+                <div className="mb-6 space-y-4">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>Subtotal</span>
+                    <span>RWF {subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>Tax (18%)</span>
+                    <span>RWF {tax.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>Shipping</span>
+                    <span>Calculated at checkout</span>
+                  </div>
+                  <div className="flex justify-between border-t border-gray-200 pt-4 text-lg font-bold text-gray-900 dark:border-gray-700 dark:text-white">
+                    <span>Total</span>
+                    <span>RWF {total.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => onNavigate("checkout")}
+                  className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+                >
+                  Proceed to Checkout
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

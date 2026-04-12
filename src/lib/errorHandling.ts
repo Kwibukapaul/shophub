@@ -41,6 +41,11 @@ export const getFriendlyErrorMessage = (
   }
 
   const message = getErrorMessage(error);
+
+  if (/\b500\b|internal server error/i.test(message)) {
+    return "Supabase returned a server error. This usually means the database policies or migrations need to be fixed.";
+  }
+
   return message || fallback;
 };
 

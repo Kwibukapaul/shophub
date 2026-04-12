@@ -1,79 +1,134 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Product } from "../types";
 import { Star } from "lucide-react";
-import SafeImage from "../components/SafeImage";
+import { usePersistentQuery } from "../hooks/usePersistentQuery";
+import { useOnlineStatus } from "../hooks/useOnlineStatus";
+
+interface CategoryData {
+  categoryName: string;
+  products: Product[];
+}
 
 export default function CategoryPage() {
   const { slug = "electronics" } = useParams();
   const navigate = useNavigate();
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categoryName, setCategoryName] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-
-      const { data: category } = await supabase
+  const isOnline = useOnlineStatus();
+  const categoryQuery = usePersistentQuery<CategoryData>({
+    queryKey: `category-page:${slug}`,
+    staleTimeMs: 60 * 1000,
+    fallbackError: "Unable to load this category.",
+    initialData: { categoryName: "", products: [] },
+    fetcher: async () => {
+      const { data: category, error: categoryError } = await supabase
         .from("categories")
         .select("id, name")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
 
-      if (!category) {
-        setProducts([]);
-        setLoading(false);
-        return;
+      if (categoryError) {
+        throw categoryError;
       }
 
-      setCategoryName(category.name);
+      if (!category) {
+        return {
+          categoryName: "",
+          products: [],
+        };
+      }
 
-      const { data } = await supabase
+      const { data: products, error: productsError } = await supabase
         .from("products")
         .select("*")
         .eq("category_id", category.id)
         .eq("is_active", true);
 
-      setProducts(data || []);
-      setLoading(false);
-    };
+      if (productsError) {
+        throw productsError;
+      }
 
-    fetchProducts();
-  }, [slug]);
+      return {
+        categoryName: category.name,
+        products: products || [],
+      };
+    },
+  });
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  const categoryData = categoryQuery.data || { categoryName: "", products: [] };
+
+  if (categoryQuery.isLoading && categoryData.products.length === 0) {
+    return <div className="p-8">Loading category...</div>;
+  }
+
+  if (categoryQuery.error && categoryData.products.length === 0) {
+    return (
+      <div className="p-8">
+        <p className="mb-4 text-red-600">{categoryQuery.error}</p>
+        <button
+          type="button"
+          onClick={() => void categoryQuery.refetch()}
+          className="rounded bg-blue-600 px-4 py-2 text-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!categoryData.categoryName) {
+    return <div className="p-8">Category not found.</div>;
+  }
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">{categoryName}</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {products.map((p) => (
-          <div
-            key={p.id}
-            onClick={() => navigate(`/product/${p.id}`)}
-            className="bg-white p-4 rounded shadow cursor-pointer"
+      {categoryQuery.error && categoryData.products.length > 0 && (
+        <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+          <span>{categoryQuery.error}</span>
+          <button
+            type="button"
+            onClick={() => void categoryQuery.refetch()}
+            className="rounded border border-amber-300 px-3 py-1 font-medium hover:bg-amber-100"
           >
-            <SafeImage
-              src={p.image_urls?.[0]}
-              alt={p.name}
-              className="h-40 w-full object-cover"
-            />
-            <h3 className="font-bold mt-2">{p.name}</h3>
-            <p className="text-blue-600 font-bold">
-              RWF {p.price.toLocaleString()}
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold">{categoryData.categoryName}</h1>
+        {categoryQuery.isFetching && (
+          <span className="text-sm text-gray-500">Refreshing...</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        {categoryData.products.map((product) => (
+          <div
+            key={product.id}
+            onClick={() => navigate(`/product/${product.id}`)}
+            className="cursor-pointer rounded bg-white p-4 shadow"
+          >
+            {isOnline && product.image_urls?.[0] ? (
+              <img
+                src={product.image_urls[0]}
+                alt={product.name}
+                className="h-40 w-full object-cover"
+              />
+            ) : (
+              <div className="h-40 w-full rounded bg-gradient-to-br from-gray-200 to-gray-300" />
+            )}
+            <h3 className="mt-2 font-bold">{product.name}</h3>
+            <p className="font-bold text-blue-600">
+              RWF {product.price.toLocaleString()}
             </p>
             <div className="flex">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(5)].map((_, index) => (
                 <Star
-                  key={i}
+                  key={index}
                   size={16}
                   className={
-                    i < Math.floor(p.rating || 0)
-                      ? "text-yellow-400 fill-yellow-400"
+                    index < Math.floor(product.rating || 0)
+                      ? "fill-yellow-400 text-yellow-400"
                       : "text-gray-300"
                   }
                 />

@@ -1,22 +1,25 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { offlineMessage } from "../lib/errorHandling";
 
-// 1. INTERFACE DEFINITION
+interface ProfileUpdates {
+  full_name?: string;
+  phone?: string;
+  profile_image_url?: string;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: any;
-  userProfile: any; // Holds database profile data (name, phone, etc.)
+  userProfile: any;
   loading: boolean;
   isAdmin: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updateProfile: (updates: {
-    full_name?: string;
-    phone?: string;
-  }) => Promise<void>;
+  updateProfile: (updates: ProfileUpdates) => Promise<void>;
   isStoreManager: boolean;
   storeId: string | null;
 }
@@ -25,17 +28,95 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
 
+const getProfileFromAuthUser = (authUser: any) => ({
+  full_name:
+    authUser?.user_metadata?.full_name ||
+    authUser?.user_metadata?.display_name ||
+    null,
+  phone: authUser?.user_metadata?.phone || authUser?.phone || null,
+  profile_image_url: authUser?.user_metadata?.profile_image_url || null,
+});
+
+const isServerSideSupabaseError = (error: unknown) => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const status = "status" in error ? (error as { status?: unknown }).status : null;
+  if (typeof status === "number" && status >= 500) {
+    return true;
+  }
+
+  const message = "message" in error ? (error as { message?: unknown }).message : "";
+  return typeof message === "string" && /\b500\b|internal|server error/i.test(message);
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null); // State for profile data
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStoreManager, setIsStoreManager] = useState(false);
   const [storeId, setStoreId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper: Fetch user profile from the database
-  const fetchUserProfile = async (userId: string) => {
+  const buildPatchedAuthUser = (currentUser: any, profile: ProfileUpdates) => {
+    if (!currentUser) {
+      return currentUser;
+    }
+
+    const currentMetadata = currentUser.user_metadata || {};
+
+    return {
+      ...currentUser,
+      phone: profile.phone ?? currentUser.phone ?? null,
+      user_metadata: {
+        ...currentMetadata,
+        full_name: profile.full_name ?? currentMetadata.full_name ?? "",
+        display_name:
+          profile.full_name ??
+          currentMetadata.display_name ??
+          currentMetadata.full_name ??
+          "",
+        phone: profile.phone ?? currentMetadata.phone ?? "",
+        profile_image_url:
+          profile.profile_image_url ?? currentMetadata.profile_image_url ?? "",
+      },
+    };
+  };
+
+  const upsertUserProfileFromAuth = async (
+    authUser: any,
+    overrides: ProfileUpdates = {},
+  ) => {
+    if (!authUser?.id) {
+      return null;
+    }
+
+    const authProfile = getProfileFromAuthUser(authUser);
+    const profilePayload = {
+      id: authUser.id,
+      full_name: overrides.full_name ?? authProfile.full_name,
+      phone: overrides.phone ?? authProfile.phone,
+      profile_image_url:
+        overrides.profile_image_url ?? authProfile.profile_image_url,
+    };
+
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .upsert(profilePayload, { onConflict: "id" })
+      .select("*")
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    setUserProfile(data ?? profilePayload);
+    return data ?? profilePayload;
+  };
+
+  const fetchUserProfile = async (userId: string, authUser?: any) => {
     const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
@@ -46,10 +127,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserProfile(data);
       return data;
     }
+
+    if (authUser && !error) {
+      try {
+        return await upsertUserProfileFromAuth(authUser);
+      } catch (upsertError) {
+        console.error("Failed to restore missing user profile:", upsertError);
+      }
+    }
+
+    if (authUser && isServerSideSupabaseError(error)) {
+      const fallbackProfile = {
+        id: userId,
+        ...getProfileFromAuthUser(authUser),
+        is_admin: false,
+        is_active: true,
+      };
+
+      setUserProfile(fallbackProfile);
+      return fallbackProfile;
+    }
+
+    setUserProfile(null);
     return null;
   };
 
-  // Helper: Check if user is admin
   const checkAdmin = async (userId: string) => {
     const { data, error } = await supabase
       .from("admin_users")
@@ -57,14 +159,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .eq("id", userId)
       .maybeSingle();
 
-    if (!error && data) {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
+    setIsAdmin(!error && Boolean(data));
   };
 
-  // Helper: Check if user is store manager
   const checkStoreManager = async (userId: string) => {
     const { data, error } = await supabase
       .from("store_managers")
@@ -75,10 +172,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!error && data) {
       setIsStoreManager(true);
       setStoreId(data.store_id);
-    } else {
-      setIsStoreManager(false);
-      setStoreId(null);
+      return;
     }
+
+    setIsStoreManager(false);
+    setStoreId(null);
   };
 
   useEffect(() => {
@@ -86,21 +184,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         try {
           const { data } = await supabase.auth.getSession();
-          const session = data.session;
+          const currentSession = data.session;
 
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
 
-          if (session?.user) {
+          if (currentSession?.user) {
             try {
               const [, , profileData] = await Promise.all([
-                checkAdmin(session.user.id),
-                checkStoreManager(session.user.id),
-                fetchUserProfile(session.user.id),
+                checkAdmin(currentSession.user.id),
+                checkStoreManager(currentSession.user.id),
+                fetchUserProfile(currentSession.user.id, currentSession.user),
               ]);
 
               if (profileData && profileData.is_active === false) {
-                await supabase.auth.signOut();
+                await supabase.auth.signOut({ scope: "local" });
                 return;
               }
             } catch (innerErr) {
@@ -113,16 +211,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUserProfile(null);
           }
         } catch (getSessionErr: any) {
-          // Handle cases where the client attempted to refresh an invalid/expired token
           console.error("supabase.auth.getSession error:", getSessionErr);
           const msg = getSessionErr?.message || String(getSessionErr);
           if (msg && msg.toLowerCase().includes("refresh token")) {
             try {
-              await supabase.auth.signOut();
-            } catch (sErr) {
+              await supabase.auth.signOut({ scope: "local" });
+            } catch (signOutError) {
               console.error(
                 "Error signing out after invalid refresh token:",
-                sErr,
+                signOutError,
               );
             }
             setSession(null);
@@ -131,7 +228,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsStoreManager(false);
             setStoreId(null);
             setUserProfile(null);
-            // notify user once
             try {
               alert("Session expired. Please sign in again.");
             } catch (_) {}
@@ -147,19 +243,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // If token refresh failed server-side, sign out locally and notify user
+      async (event, nextSession) => {
         if (
-          event === "TOKEN_REFRESH_FAILED" ||
-          event === "refresh_token_error"
+          String(event) === "TOKEN_REFRESH_FAILED" ||
+          String(event) === "refresh_token_error"
         ) {
           console.warn("Auth event indicates token refresh failed:", event);
           try {
-            await supabase.auth.signOut();
-          } catch (sErr) {
+            await supabase.auth.signOut({ scope: "local" });
+          } catch (signOutError) {
             console.error(
               "Error signing out after token refresh failure:",
-              sErr,
+              signOutError,
             );
           }
           setSession(null);
@@ -176,23 +271,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         try {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(nextSession);
+          setUser(nextSession?.user ?? null);
 
-          if (session?.user) {
+          if (nextSession?.user) {
             try {
               const [, , profileData] = await Promise.all([
-                checkAdmin(session.user.id),
-                checkStoreManager(session.user.id),
-                fetchUserProfile(session.user.id),
+                checkAdmin(nextSession.user.id),
+                checkStoreManager(nextSession.user.id),
+                fetchUserProfile(nextSession.user.id, nextSession.user),
               ]);
 
               if (profileData && profileData.is_active === false) {
-                await supabase.auth.signOut();
+                await supabase.auth.signOut({ scope: "local" });
                 return;
               }
-            } catch (inner) {
-              console.error("Auth listener helper error:", inner);
+            } catch (innerError) {
+              console.error("Auth listener helper error:", innerError);
             }
           } else {
             setIsAdmin(false);
@@ -200,8 +295,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setStoreId(null);
             setUserProfile(null);
           }
-        } catch (e) {
-          console.error("Auth state handler failed:", e);
+        } catch (error) {
+          console.error("Auth state handler failed:", error);
         } finally {
           setLoading(false);
         }
@@ -218,45 +313,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       email,
       password,
     });
-    if (error) throw error;
+
+    if (error) {
+      throw error;
+    }
 
     if (data.session?.user) {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("is_active")
-        .eq("id", data.session.user.id)
-        .maybeSingle();
+      const profile = await fetchUserProfile(data.session.user.id, data.session.user);
 
       if (profile && profile.is_active === false) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         throw new Error("Your account has been deactivated.");
       }
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+          display_name: fullName,
+          phone: null,
+          profile_image_url: null,
+        },
+      },
     });
 
-    if (error) throw error;
-
-    if (data.user) {
-      // Create the profile entry in the database
-      await supabase.from("user_profiles").insert({
-        id: data.user.id,
-        full_name: fullName,
-        email,
-      });
+    if (error) {
+      throw error;
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     setSession(null);
     setUser(null);
-    setUserProfile(null); // Clear profile on logout
+    setUserProfile(null);
     setIsAdmin(false);
     setIsStoreManager(false);
     setStoreId(null);
@@ -266,24 +361,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + "/update-password",
     });
-    if (error) throw error;
+
+    if (error) {
+      throw error;
+    }
   };
 
-  const updateProfile = async (updates: {
-    full_name?: string;
-    phone?: string;
-  }) => {
-    if (!user) throw new Error("No user logged in");
+  const updateProfile = async (updates: ProfileUpdates) => {
+    if (!user) {
+      throw new Error("No user logged in");
+    }
 
-    const { error } = await supabase
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new Error(offlineMessage);
+    }
+
+    const currentProfile = {
+      ...getProfileFromAuthUser(user),
+      ...userProfile,
+    };
+
+    const nextProfile = {
+      full_name:
+        updates.full_name !== undefined
+          ? updates.full_name.trim() || null
+          : currentProfile.full_name || null,
+      phone:
+        updates.phone !== undefined
+          ? updates.phone.trim() || null
+          : currentProfile.phone || null,
+      profile_image_url:
+        updates.profile_image_url !== undefined
+          ? updates.profile_image_url.trim() || null
+          : currentProfile.profile_image_url || null,
+    };
+
+    const { data: profileData, error: profileError } = await supabase
       .from("user_profiles")
-      .update(updates)
-      .eq("id", user.id);
+      .upsert(
+        {
+          id: user.id,
+          full_name: nextProfile.full_name,
+          phone: nextProfile.phone,
+          profile_image_url: nextProfile.profile_image_url,
+        },
+        { onConflict: "id" },
+      )
+      .select("*")
+      .maybeSingle();
 
-    if (error) throw error;
+    if (profileError) {
+      throw profileError;
+    }
 
-    // Optimistically update local state for instant UI feedback
-    setUserProfile((prev: any) => ({ ...prev, ...updates }));
+    const patchedUser = buildPatchedAuthUser(user, nextProfile);
+
+    setUser(patchedUser);
+    setSession((previous) =>
+      previous
+        ? {
+            ...previous,
+            user: patchedUser,
+          }
+        : previous,
+    );
+    setUserProfile(profileData ?? { id: user.id, ...nextProfile });
   };
 
   return (
@@ -291,7 +433,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         session,
         user,
-        userProfile, // Exposed
+        userProfile,
         isAdmin,
         isStoreManager,
         storeId,
@@ -299,8 +441,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signInWithPassword,
         signUp,
         signOut,
-        resetPassword, // Exposed
-        updateProfile, // Exposed
+        resetPassword,
+        updateProfile,
       }}
     >
       {children}

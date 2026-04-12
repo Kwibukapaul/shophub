@@ -20,6 +20,7 @@ import AdminOrders from "./AdminOrders";
 import AdminUsers from "./AdminUsers";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminReviews from "./AdminReviews";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 interface AdminLayoutProps {
   userProfile: UserProfile | null;
@@ -42,6 +43,15 @@ export default function AdminLayout({
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
+
+  const renderCurrentPage = () => {
+    if (currentPage === "dashboard") return <AdminDashboard />;
+    if (currentPage === "products") return <AdminProducts />;
+    if (currentPage === "orders") return <AdminOrders />;
+    if (currentPage === "users") return <AdminUsers />;
+    if (currentPage === "reviews") return <AdminReviews />;
+    return <AdminAnalytics />;
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -114,12 +124,13 @@ export default function AdminLayout({
         </div>
 
         <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
-          {currentPage === "dashboard" && <AdminDashboard />}
-          {currentPage === "products" && <AdminProducts />}
-          {currentPage === "orders" && <AdminOrders />}
-          {currentPage === "users" && <AdminUsers />}
-          {currentPage === "reviews" && <AdminReviews />}
-          {currentPage === "analytics" && <AdminAnalytics />}
+          <ErrorBoundary
+            resetKey={`admin-${currentPage}`}
+            title="This admin section crashed."
+            description="You can switch to another admin section or retry this one."
+          >
+            {renderCurrentPage()}
+          </ErrorBoundary>
         </div>
       </div>
     </div>

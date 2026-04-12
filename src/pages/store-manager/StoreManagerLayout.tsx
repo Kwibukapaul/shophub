@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import StoreManagerDashboard from "./StoreManagerDashboard";
 import StoreManagerProducts from "./StoreManagerProducts";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 interface StoreManagerLayoutProps {
   userProfile: UserProfile | null;
@@ -28,13 +29,22 @@ export default function StoreManagerLayout({
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { isDark, toggleTheme } = useTheme();
+  const resolvedStoreId = storeId;
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "products", label: "Products", icon: Package },
   ];
 
-  if (!storeId) {
+  const renderCurrentPage = () => {
+    if (currentPage === "dashboard") {
+      return <StoreManagerDashboard storeId={resolvedStoreId!} />;
+    }
+
+    return <StoreManagerProducts storeId={resolvedStoreId!} />;
+  };
+
+  if (!resolvedStoreId) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 pb-20">
         <div className="text-center">
@@ -123,8 +133,13 @@ export default function StoreManagerLayout({
         </div>
 
         <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
-          {currentPage === "dashboard" && <StoreManagerDashboard storeId={storeId} />}
-          {currentPage === "products" && <StoreManagerProducts storeId={storeId} />}
+          <ErrorBoundary
+            resetKey={`store-manager-${currentPage}`}
+            title="This manager section crashed."
+            description="Other sections are still available while you retry this one."
+          >
+            {renderCurrentPage()}
+          </ErrorBoundary>
         </div>
       </div>
     </div>

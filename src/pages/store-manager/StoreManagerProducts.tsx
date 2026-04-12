@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Product, Category } from "../../types";
-import { Edit2, Trash2, Plus, Minus, AlertCircle } from "lucide-react";
+import { Edit2, Trash2, Plus, Minus, AlertCircle, Search } from "lucide-react";
+import {
+  getImagePreviewUrl,
+  normalizeOptionalImageUrl,
+} from "../../lib/imageUrl";
 
 export default function StoreManagerProducts({ storeId }: { storeId: string }) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -11,9 +15,8 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -65,6 +68,7 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
     setMessage("");
 
     try {
+      const normalizedImageUrl = normalizeOptionalImageUrl(imageUrl);
       const slugify = (s: string) =>
         s
           .toLowerCase()
@@ -82,22 +86,7 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
         created_at: editingId ? undefined : new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-
-      // handle image upload for manager form
-      if (imageFile) {
-        const bucket =
-          import.meta.env.VITE_PRODUCT_IMAGE_BUCKET || "product-images";
-        const path = `products/${crypto.randomUUID()}-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from(bucket)
-          .upload(path, imageFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        const { data: publicData } = await supabase.storage
-          .from(bucket)
-          .getPublicUrl(path);
-        const publicUrl = (publicData as any)?.publicUrl || null;
-        if (publicUrl) productData.image_urls = [publicUrl];
-      }
+      productData.image_urls = normalizedImageUrl ? [normalizedImageUrl] : [];
 
       if (editingId) {
         const { error } = await supabase
@@ -127,8 +116,7 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
       });
       setShowForm(false);
       setEditingId(null);
-      setImageFile(null);
-      setImagePreview(null);
+      setImageUrl("");
       fetchProducts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error saving product");
@@ -149,12 +137,35 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
     });
     setEditingId(product.id);
     setShowForm(true);
-    setImagePreview(
+    setImageUrl(
       product.image_urls && product.image_urls.length
         ? product.image_urls[0]
-        : null,
+        : "",
     );
   };
+
+  const imagePreviewUrl = getImagePreviewUrl(imageUrl);
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
+  const filteredProducts = products.filter((product) => {
+    if (!normalizedSearchTerm) {
+      return true;
+    }
+
+    const searchableText = [
+      product.name,
+      product.description,
+      product.long_description,
+      product.sku,
+      product.slug,
+      categoryNameById.get(product.category_id),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return searchableText.includes(normalizedSearchTerm);
+  });
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
@@ -214,12 +225,15 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
             setFormData({
               name: "",
               description: "",
+              long_description: "",
               price: 0,
               cost_price: 0,
               category_id: "",
               stock_quantity: 0,
               sku: "",
+              slug: "",
             });
+            setImageUrl("");
           }}
           className="flex items-center gap-2 bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-medium shadow-lg"
         >
@@ -245,6 +259,22 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
           <p className="text-red-700 dark:text-red-300">{error}</p>
         </div>
       )}
+
+      <div className="mb-6">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Search Products
+        </label>
+        <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <Search size={18} className="text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search by name, SKU, description, slug, or category"
+            className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
+          />
+        </div>
+      </div>
 
       {showForm && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700">
@@ -343,32 +373,23 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
 
             <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                Product Image (optional)
+                Product Image URL (optional)
               </label>
               <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files && e.target.files[0];
-                  if (file) {
-                    setImageFile(file);
-                    try {
-                      setImagePreview(URL.createObjectURL(file));
-                    } catch {
-                      setImagePreview(null);
-                    }
-                  } else {
-                    setImageFile(null);
-                    setImagePreview(null);
-                  }
-                }}
-                className="w-full text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-md"
+                type="text"
+                placeholder="https://example.com/product-image.jpg"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white"
+                inputMode="url"
+                autoCapitalize="none"
+                spellCheck={false}
               />
-              {imagePreview && (
+              {imagePreviewUrl && (
                 <img
-                  src={imagePreview}
-                  alt="preview"
-                  className="mt-2 h-28 object-contain rounded-md border"
+                  src={imagePreviewUrl}
+                  alt="Product preview"
+                  className="mt-2 h-28 w-full rounded-md border object-contain"
                 />
               )}
             </div>
@@ -402,6 +423,12 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
             No products found in your store.
           </p>
         </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <p className="text-gray-600 dark:text-gray-400">
+            No products match "{searchTerm.trim()}".
+          </p>
+        </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto border border-gray-200 dark:border-gray-700">
           <table className="w-full">
@@ -422,7 +449,7 @@ export default function StoreManagerProducts({ storeId }: { storeId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {products.map((p) => (
+              {filteredProducts.map((p) => (
                 <tr
                   key={p.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50"

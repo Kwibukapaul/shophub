@@ -6,7 +6,7 @@ import {
 } from '../../lib/errorHandling';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { Order } from '../../types';
-import { Eye, Download, AlertCircle } from 'lucide-react';
+import { Eye, Download, AlertCircle, Search } from 'lucide-react';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -15,6 +15,7 @@ export default function AdminOrders() {
   const [statusUpdate, setStatusUpdate] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
@@ -81,6 +82,29 @@ export default function AdminOrders() {
   };
 
   const statuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const filteredOrders = orders.filter((order) => {
+    if (!normalizedSearchTerm) {
+      return true;
+    }
+
+    const searchableText = [
+      order.order_number,
+      order.status,
+      order.payment_status,
+      order.payment_method,
+      order.delivery_type,
+      order.user_id,
+      order.id,
+      order.total_amount.toString(),
+      order.created_at,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return searchableText.includes(normalizedSearchTerm);
+  });
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -127,6 +151,22 @@ export default function AdminOrders() {
         </div>
       )}
 
+      <div className="mb-6">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Search Orders
+        </label>
+        <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <Search size={18} className="text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search by order number, status, payment, amount, or user ID"
+            className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
@@ -134,6 +174,12 @@ export default function AdminOrders() {
       ) : orders.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700">
           <p className="text-gray-600 dark:text-gray-400">No orders found</p>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 border border-gray-200 dark:border-gray-700">
+          <p className="text-gray-600 dark:text-gray-400">
+            No orders match "{searchTerm.trim()}".
+          </p>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 overflow-x-auto border border-gray-200 dark:border-gray-700">
@@ -149,7 +195,7 @@ export default function AdminOrders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">{order.order_number}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
