@@ -6,6 +6,7 @@ export type Toast = {
   createdAt: number;
   duration?: number;
   onClick?: () => void;
+  type?: "success" | "error" | "info";
 };
 
 interface ToastStore {

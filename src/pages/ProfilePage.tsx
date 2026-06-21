@@ -20,7 +20,9 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success",
+  );
 
   useEffect(() => {
     if (userProfile) {
@@ -41,7 +43,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
     setMessage("");
 
     try {
-      const normalizedProfileImageUrl = normalizeOptionalImageUrl(profileImageUrl);
+      const normalizedProfileImageUrl =
+        normalizeOptionalImageUrl(profileImageUrl);
       await updateProfile({
         full_name: fullName,
         phone,
@@ -73,7 +76,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="container-app py-8">
         <button
           onClick={() => onNavigate("home")}
           className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -82,7 +85,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
           Back
         </button>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
+        <div className="card p-8">
           <div className="mb-8 flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               My Profile
@@ -134,13 +137,17 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                 />
               ) : (
                 <span className="text-2xl font-bold text-gray-500 dark:text-gray-300">
-                  {(fullName || session?.user.email || "U").charAt(0).toUpperCase()}
+                  {(fullName || session?.user.email || "U")
+                    .charAt(0)
+                    .toUpperCase()}
                 </span>
               )}
             </div>
             <div className="flex-1">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                This name and phone are synced to your profile data, and your name is also stored in auth metadata so it follows your account after login.
+                This name and phone are synced to your profile data, and your
+                name is also stored in auth metadata so it follows your account
+                after login.
               </p>
             </div>
           </div>

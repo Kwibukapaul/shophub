@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
+import Button from "../components/ui/Button";
 import { useAuth } from "../context/useAuth";
 import { supabase } from "../lib/supabase";
 import { CartItem, Product, UserAddress } from "../types";
@@ -369,14 +370,15 @@ export default function CheckoutPage({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <button
+      <div className="container-app py-8">
+        <Button
           onClick={() => onNavigate("cart")}
-          className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mb-8 flex items-center gap-2 font-medium"
+          variant="ghost"
         >
           <ChevronLeft size={20} />
           Back to Cart
-        </button>
+        </Button>
 
         <div className="mb-8 flex items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -540,13 +542,14 @@ export default function CheckoutPage({
                   </div>
                 </div>
 
-                <button
+                <Button
                   type="submit"
                   disabled={submitting || cartItems.length === 0}
-                  className="w-full rounded-lg bg-blue-600 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-700 dark:hover:bg-blue-600"
+                  className="w-full"
+                  variant="primary"
                 >
                   {submitting ? "Processing..." : "Place Order"}
-                </button>
+                </Button>
               </form>
             </div>
 

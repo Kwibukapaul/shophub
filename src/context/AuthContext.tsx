@@ -2,6 +2,7 @@ import { createContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { offlineMessage } from "../lib/errorHandling";
+import withTimeout from "../lib/withTimeout";
 
 interface ProfileUpdates {
   full_name?: string;
@@ -9,19 +10,34 @@ interface ProfileUpdates {
   profile_image_url?: string;
 }
 
+type Role = "admin" | "store_manager" | "user" | null;
+
 interface AuthContextType {
+  // single source of truth
+  authState: {
+    loading: boolean;
+    initialized: boolean;
+    user: any | null;
+    session: Session | null;
+    profile: any | null;
+    role: Role;
+    storeId: string | null;
+  };
+  // convenience derived props for backwards compatibility
   session: Session | null;
-  user: any;
-  userProfile: any;
+  user: any | null;
+  userProfile: any | null;
   loading: boolean;
+  initialized: boolean;
+  role: Role;
   isAdmin: boolean;
+  isStoreManager: boolean;
+  storeId: string | null;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: ProfileUpdates) => Promise<void>;
-  isStoreManager: boolean;
-  storeId: string | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -42,23 +58,38 @@ const isServerSideSupabaseError = (error: unknown) => {
     return false;
   }
 
-  const status = "status" in error ? (error as { status?: unknown }).status : null;
+  const status =
+    "status" in error ? (error as { status?: unknown }).status : null;
   if (typeof status === "number" && status >= 500) {
     return true;
   }
 
-  const message = "message" in error ? (error as { message?: unknown }).message : "";
-  return typeof message === "string" && /\b500\b|internal|server error/i.test(message);
+  const message =
+    "message" in error ? (error as { message?: unknown }).message : "";
+  return (
+    typeof message === "string" &&
+    /\b500\b|internal|server error/i.test(message)
+  );
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isStoreManager, setIsStoreManager] = useState(false);
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authState, setAuthState] = useState<{
+    loading: boolean;
+    initialized: boolean;
+    user: any | null;
+    session: Session | null;
+    profile: any | null;
+    role: Role;
+    storeId: string | null;
+  }>({
+    loading: true,
+    initialized: false,
+    user: null,
+    session: null,
+    profile: null,
+    role: null,
+    storeId: null,
+  });
 
   const buildPatchedAuthUser = (currentUser: any, profile: ProfileUpdates) => {
     if (!currentUser) {
@@ -112,131 +143,157 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     }
 
-    setUserProfile(data ?? profilePayload);
     return data ?? profilePayload;
   };
 
   const fetchUserProfile = async (userId: string, authUser?: any) => {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
-    if (!error && data) {
-      setUserProfile(data);
-      return data;
-    }
-
-    if (authUser && !error) {
-      try {
-        return await upsertUserProfileFromAuth(authUser);
-      } catch (upsertError) {
-        console.error("Failed to restore missing user profile:", upsertError);
+      if (!error && data) {
+        return data;
       }
+
+      if (authUser && !error) {
+        try {
+          return await upsertUserProfileFromAuth(authUser);
+        } catch (upsertError) {
+          console.error("Failed to restore missing user profile:", upsertError);
+        }
+      }
+
+      if (authUser && isServerSideSupabaseError(error)) {
+        const fallbackProfile = {
+          id: userId,
+          ...getProfileFromAuthUser(authUser),
+          is_admin: false,
+          is_active: true,
+        };
+
+        return fallbackProfile;
+      }
+
+      return null;
+    } catch (err) {
+      console.error("fetchUserProfile error:", err);
+      return null;
     }
-
-    if (authUser && isServerSideSupabaseError(error)) {
-      const fallbackProfile = {
-        id: userId,
-        ...getProfileFromAuthUser(authUser),
-        is_admin: false,
-        is_active: true,
-      };
-
-      setUserProfile(fallbackProfile);
-      return fallbackProfile;
-    }
-
-    setUserProfile(null);
-    return null;
   };
 
   const checkAdmin = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
 
-    setIsAdmin(!error && Boolean(data));
+      return !error && Boolean(data);
+    } catch (err) {
+      console.error("checkAdmin error:", err);
+      return false;
+    }
   };
 
   const checkStoreManager = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("store_managers")
-      .select("store_id")
-      .eq("id", userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("store_managers")
+        .select("store_id")
+        .eq("id", userId)
+        .maybeSingle();
 
-    if (!error && data) {
-      setIsStoreManager(true);
-      setStoreId(data.store_id);
-      return;
+      if (!error && data) {
+        return { isManager: true, storeId: data.store_id };
+      }
+      return { isManager: false, storeId: null };
+    } catch (err) {
+      console.error("checkStoreManager error:", err);
+      return { isManager: false, storeId: null };
     }
-
-    setIsStoreManager(false);
-    setStoreId(null);
   };
 
   useEffect(() => {
+    let mounted = true;
+
+    const setStateSafe = (patch: Partial<typeof authState>) => {
+      if (!mounted) return;
+      setAuthState((prev) => ({ ...prev, ...patch }));
+    };
+
     const init = async () => {
       try {
-        try {
-          const { data } = await supabase.auth.getSession();
-          const currentSession = data.session;
+        if (process.env.NODE_ENV === "development")
+          console.debug("Auth Init Start");
 
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+        const getSessionPromise = supabase.auth.getSession();
+        const { data } = await withTimeout(getSessionPromise, 5000).catch(
+          (err) => {
+            console.warn("getSession timed out or failed:", err);
+            return { data: { session: null } } as any;
+          },
+        );
 
-          if (currentSession?.user) {
-            try {
-              const [, , profileData] = await Promise.all([
-                checkAdmin(currentSession.user.id),
-                checkStoreManager(currentSession.user.id),
-                fetchUserProfile(currentSession.user.id, currentSession.user),
-              ]);
+        const currentSession = data?.session ?? null;
 
-              if (profileData && profileData.is_active === false) {
-                await supabase.auth.signOut({ scope: "local" });
-                return;
-              }
-            } catch (innerErr) {
-              console.error("Auth helper error:", innerErr);
-            }
-          } else {
-            setIsAdmin(false);
-            setIsStoreManager(false);
-            setStoreId(null);
-            setUserProfile(null);
-          }
-        } catch (getSessionErr: any) {
-          console.error("supabase.auth.getSession error:", getSessionErr);
-          const msg = getSessionErr?.message || String(getSessionErr);
-          if (msg && msg.toLowerCase().includes("refresh token")) {
-            try {
+        setStateSafe({
+          session: currentSession,
+          user: currentSession?.user ?? null,
+        });
+
+        // Mark initialized and allow app to render immediately
+        setStateSafe({ loading: false, initialized: true });
+
+        if (process.env.NODE_ENV === "development")
+          console.debug("Session Restored");
+
+        // Background fetch profile and roles
+        if (currentSession?.user) {
+          const userId = currentSession.user.id;
+          try {
+            const [isAdminRes, storeRes, profileData] = await Promise.all([
+              withTimeout(checkAdmin(userId), 3000).catch(() => false),
+              withTimeout(checkStoreManager(userId), 3000).catch(() => ({
+                isManager: false,
+                storeId: null,
+              })),
+              withTimeout(
+                fetchUserProfile(userId, currentSession.user),
+                5000,
+              ).catch(() => null),
+            ]);
+
+            if (!mounted) return;
+
+            const role: Role = isAdminRes
+              ? "admin"
+              : storeRes?.isManager
+                ? "store_manager"
+                : "user";
+
+            setStateSafe({
+              profile: profileData ?? null,
+              role,
+              storeId: storeRes?.storeId ?? null,
+            });
+
+            if (process.env.NODE_ENV === "development")
+              console.debug("Profile Loaded", { profileData, role });
+
+            if (profileData && profileData.is_active === false) {
               await supabase.auth.signOut({ scope: "local" });
-            } catch (signOutError) {
-              console.error(
-                "Error signing out after invalid refresh token:",
-                signOutError,
-              );
             }
-            setSession(null);
-            setUser(null);
-            setIsAdmin(false);
-            setIsStoreManager(false);
-            setStoreId(null);
-            setUserProfile(null);
-            try {
-              alert("Session expired. Please sign in again.");
-            } catch (_) {}
+          } catch (err) {
+            console.error("Background profile/role load failed:", err);
           }
         }
       } catch (err) {
         console.error("Auth init failed:", err);
-      } finally {
-        setLoading(false);
+        setStateSafe({ loading: false, initialized: true });
       }
     };
 
@@ -257,54 +314,85 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               signOutError,
             );
           }
-          setSession(null);
-          setUser(null);
-          setIsAdmin(false);
-          setIsStoreManager(false);
-          setStoreId(null);
-          setUserProfile(null);
+          if (!mounted) return;
+          setStateSafe({
+            session: null,
+            user: null,
+            profile: null,
+            role: null,
+            storeId: null,
+            loading: false,
+            initialized: true,
+          });
           try {
             alert("Session expired. Please sign in again.");
           } catch (_) {}
-          setLoading(false);
           return;
         }
 
         try {
-          setSession(nextSession);
-          setUser(nextSession?.user ?? null);
+          const sessionVal = nextSession ?? null;
+          setStateSafe({ session: sessionVal, user: sessionVal?.user ?? null });
 
-          if (nextSession?.user) {
+          // background load
+          if (sessionVal?.user) {
+            const userId = sessionVal.user.id;
             try {
-              const [, , profileData] = await Promise.all([
-                checkAdmin(nextSession.user.id),
-                checkStoreManager(nextSession.user.id),
-                fetchUserProfile(nextSession.user.id, nextSession.user),
+              const [isAdminRes, storeRes, profileData] = await Promise.all([
+                withTimeout(checkAdmin(userId), 3000).catch(() => false),
+                withTimeout(checkStoreManager(userId), 3000).catch(() => ({
+                  isManager: false,
+                  storeId: null,
+                })),
+                withTimeout(
+                  fetchUserProfile(userId, sessionVal.user),
+                  5000,
+                ).catch(() => null),
               ]);
+
+              if (!mounted) return;
+
+              const role: Role = isAdminRes
+                ? "admin"
+                : storeRes?.isManager
+                  ? "store_manager"
+                  : "user";
+
+              setStateSafe({
+                profile: profileData ?? null,
+                role,
+                storeId: storeRes?.storeId ?? null,
+                loading: false,
+                initialized: true,
+              });
 
               if (profileData && profileData.is_active === false) {
                 await supabase.auth.signOut({ scope: "local" });
-                return;
               }
-            } catch (innerError) {
-              console.error("Auth listener helper error:", innerError);
+            } catch (err) {
+              console.error("Auth listener helper error:", err);
             }
           } else {
-            setIsAdmin(false);
-            setIsStoreManager(false);
-            setStoreId(null);
-            setUserProfile(null);
+            setStateSafe({
+              profile: null,
+              role: null,
+              storeId: null,
+              loading: false,
+              initialized: true,
+            });
           }
         } catch (error) {
           console.error("Auth state handler failed:", error);
-        } finally {
-          setLoading(false);
+          setStateSafe({ loading: false, initialized: true });
         }
       },
     );
 
     return () => {
-      listener.subscription.unsubscribe();
+      mounted = false;
+      try {
+        listener.subscription.unsubscribe();
+      } catch (_) {}
     };
   }, []);
 
@@ -319,12 +407,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (data.session?.user) {
-      const profile = await fetchUserProfile(data.session.user.id, data.session.user);
+      const profile = await withTimeout(
+        fetchUserProfile(data.session.user.id, data.session.user),
+        5000,
+      ).catch(() => null);
 
       if (profile && profile.is_active === false) {
         await supabase.auth.signOut({ scope: "local" });
         throw new Error("Your account has been deactivated.");
       }
+
+      setAuthState((prev) => ({
+        ...prev,
+        session: data.session ?? prev.session,
+        user: data.session?.user ?? prev.user,
+        profile: profile ?? prev.profile,
+      }));
     }
   };
 
@@ -349,12 +447,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut({ scope: "local" });
-    setSession(null);
-    setUser(null);
-    setUserProfile(null);
-    setIsAdmin(false);
-    setIsStoreManager(false);
-    setStoreId(null);
+    setAuthState({
+      loading: false,
+      initialized: true,
+      user: null,
+      session: null,
+      profile: null,
+      role: null,
+      storeId: null,
+    });
   };
 
   const resetPassword = async (email: string) => {
@@ -368,6 +469,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateProfile = async (updates: ProfileUpdates) => {
+    const user = authState.user;
+    const userProfile = authState.profile;
+
     if (!user) {
       throw new Error("No user logged in");
     }
@@ -416,28 +520,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const patchedUser = buildPatchedAuthUser(user, nextProfile);
 
-    setUser(patchedUser);
-    setSession((previous) =>
-      previous
-        ? {
-            ...previous,
-            user: patchedUser,
-          }
-        : previous,
-    );
-    setUserProfile(profileData ?? { id: user.id, ...nextProfile });
+    setAuthState((prev) => ({
+      ...prev,
+      user: patchedUser,
+      session: prev.session
+        ? { ...prev.session, user: patchedUser }
+        : prev.session,
+      profile: profileData ?? { id: user.id, ...nextProfile },
+    }));
   };
+  const derivedIsAdmin = authState.role === "admin";
+  const derivedIsStoreManager = authState.role === "store_manager";
 
   return (
     <AuthContext.Provider
       value={{
-        session,
-        user,
-        userProfile,
-        isAdmin,
-        isStoreManager,
-        storeId,
-        loading,
+        authState,
+        session: authState.session,
+        user: authState.user,
+        userProfile: authState.profile,
+        loading: authState.loading,
+        initialized: authState.initialized,
+        role: authState.role,
+        isAdmin: derivedIsAdmin,
+        isStoreManager: derivedIsStoreManager,
+        storeId: authState.storeId,
         signInWithPassword,
         signUp,
         signOut,

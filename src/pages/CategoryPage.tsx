@@ -80,7 +80,7 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="container-app py-8">
       {categoryQuery.error && categoryData.products.length > 0 && (
         <div className="mb-6 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
           <span>{categoryQuery.error}</span>
@@ -95,33 +95,38 @@ export default function CategoryPage() {
       )}
 
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">{categoryData.categoryName}</h1>
+        <h1 className="text-3xl font-bold text-slate-900">
+          {categoryData.categoryName}
+        </h1>
         {categoryQuery.isFetching && (
-          <span className="text-sm text-gray-500">Refreshing...</span>
+          <span className="text-sm text-slate-500">Refreshing...</span>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {categoryData.products.map((product) => (
           <div
             key={product.id}
             onClick={() => navigate(`/product/${product.id}`)}
-            className="cursor-pointer rounded bg-white p-4 shadow"
+            className="cursor-pointer card p-4"
           >
             {isOnline && product.image_urls?.[0] ? (
               <img
                 src={product.image_urls[0]}
                 alt={product.name}
-                className="h-40 w-full object-cover"
+                className="h-44 w-full object-cover rounded-md"
               />
             ) : (
-              <div className="h-40 w-full rounded bg-gradient-to-br from-gray-200 to-gray-300" />
+              <div className="h-44 w-full rounded-md bg-gradient-to-br from-gray-200 to-gray-300" />
             )}
-            <h3 className="mt-2 font-bold">{product.name}</h3>
-            <p className="font-bold text-blue-600">
+
+            <h3 className="mt-3 font-semibold text-slate-900">
+              {product.name}
+            </h3>
+            <p className="font-bold text-slate-900">
               RWF {product.price.toLocaleString()}
             </p>
-            <div className="flex">
+            <div className="flex mt-2">
               {[...Array(5)].map((_, index) => (
                 <Star
                   key={index}

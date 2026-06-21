@@ -1,0 +1,67 @@
+-- Debug migration: list and (optionally) remove or pause all RLS policies
+-- WARNING: Run only in a development or troubleshooting environment.
+-- 1) Preview all policies (run this first):
+-- SELECT n.nspname AS schema, c.relname AS table, pol.polname AS policy_name, pol.polcmd AS command,
+--        pg_get_expr(pol.polqual, pol.polrelid) AS using_expr, pg_get_expr(pol.polwithcheck, pol.polrelid) AS with_check
+-- FROM pg_policy pol
+-- JOIN pg_class c ON pol.polrelid = c.oid
+-- JOIN pg_namespace n ON c.relnamespace = n.oid
+-- WHERE n.nspname NOT IN ('pg_catalog','information_schema');
+
+-- 2) Generate DROP POLICY statements (preview):
+-- SELECT 'DROP POLICY IF EXISTS ' || quote_ident(pol.polname) || ' ON ' || quote_ident(n.nspname) || '.' || quote_ident(c.relname) || ';' AS sql
+-- FROM pg_policy pol
+-- JOIN pg_class c ON pol.polrelid = c.oid
+-- JOIN pg_namespace n ON c.relnamespace = n.oid
+-- WHERE n.nspname NOT IN ('pg_catalog','information_schema');
+
+-- 3) Drop all policies (dangerous; run only when ready):
+-- DO $$
+-- DECLARE r record;
+-- BEGIN
+--   FOR r IN
+--     SELECT n.nspname, c.relname, pol.polname
+--     FROM pg_policy pol
+--     JOIN pg_class c ON pol.polrelid = c.oid
+--     JOIN pg_namespace n ON c.relnamespace = n.oid
+--     WHERE n.nspname NOT IN ('pg_catalog','information_schema')
+--   LOOP
+--     EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I;', r.polname, r.nspname, r.relname);
+--   END LOOP;
+-- END
+-- $$;
+
+-- 4) Alternative: temporarily DISABLE RLS on all user tables (safer for debugging):
+-- DO $$
+-- DECLARE r record;
+-- BEGIN
+--   FOR r IN
+--     SELECT n.nspname, c.relname
+--     FROM pg_class c
+--     JOIN pg_namespace n ON c.relnamespace = n.oid
+--     WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog','information_schema')
+--   LOOP
+--     EXECUTE format('ALTER TABLE %I.%I DISABLE ROW LEVEL SECURITY;', r.nspname, r.relname);
+--   END LOOP;
+-- END
+-- $$;
+
+-- 5) To re-enable RLS after debugging, run:
+-- DO $$
+-- DECLARE r record;
+-- BEGIN
+--   FOR r IN
+--     SELECT n.nspname, c.relname
+--     FROM pg_class c
+--     JOIN pg_namespace n ON c.relnamespace = n.oid
+--     WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog','information_schema')
+--   LOOP
+--     EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY;', r.nspname, r.relname);
+--   END LOOP;
+-- END
+-- $$;
+
+-- Notes:
+-- - Prefer running the preview SELECTs first to confirm which policies will be affected.
+-- - Consider creating a DB dump or saving the output of the preview SELECT for rollback.
+-- - It's often faster to disable RLS temporarily than to drop policies; re-enable afterwards.

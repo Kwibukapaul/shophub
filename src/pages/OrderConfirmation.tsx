@@ -98,94 +98,103 @@ export default function OrderConfirmation() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
-        <CheckCircle
-          className="mx-auto mb-6 text-green-600 dark:text-green-400"
-          size={64}
-        />
-        <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-          Order Confirmed!
-        </h1>
-        <p className="mb-2 text-gray-600 dark:text-gray-400">
-          Your order has been placed successfully.
-        </p>
-        <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-          Order ID:{" "}
-          <span className="font-bold text-gray-900 dark:text-white">
-            {order.order_number}
-          </span>
-        </p>
-        <p className="mb-8 text-sm text-gray-600 dark:text-gray-400">
-          Total paid:{" "}
-          <span className="font-bold text-gray-900 dark:text-white">
-            RWF {order.total_amount.toLocaleString()}
-          </span>
-        </p>
-
-        <div className="space-y-3">
-          {order && <OrderProgress order={order} />}
-
-          {items.length > 0 && (
-            <div className="mb-4 text-left">
-              <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Items in this order
-              </h3>
-              <div className="space-y-2">
-                {items.map((it) => (
-                  <div
-                    key={it.id}
-                    className="flex justify-between text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    <span>
-                      {it.product_name} x{it.quantity}
-                    </span>
-                    <span>RWF {it.subtotal.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={() => navigate(`/cart`)}
-                  className="flex-1 rounded-lg border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  View Cart
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate(`/orders/${order.id}`)}
-              className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-            >
-              Track Order
-            </button>
-
-            {order.payment_status !== "completed" && (
-              <button
-                onClick={() => setShowUSSD(true)}
-                className="w-full rounded-lg bg-green-600 py-3 font-medium text-white transition hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
-              >
-                Complete Payment (USSD)
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => navigate("/")}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            <ChevronLeft size={18} />
-            Continue Shopping
-          </button>
-        </div>
-        {showUSSD && (
-          <USSDPayment
-            amount={order.total_amount}
-            orderId={order.id}
-            onClose={() => setShowUSSD(false)}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container-app py-12">
+        <div className="w-full max-w-lg mx-auto card text-center p-8">
+          <CheckCircle
+            className="mx-auto mb-6 text-green-600 dark:text-green-400"
+            size={64}
           />
-        )}
+
+          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+            Order Confirmed!
+          </h1>
+
+          <p className="mb-2 text-gray-600 dark:text-gray-400">
+            Your order has been placed successfully.
+          </p>
+
+          <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+            Order ID:{" "}
+            <span className="font-bold text-gray-900 dark:text-white">
+              {order.order_number}
+            </span>
+          </p>
+
+          <p className="mb-8 text-sm text-gray-600 dark:text-gray-400">
+            Total paid:{" "}
+            <span className="font-bold text-gray-900 dark:text-white">
+              RWF {order.total_amount.toLocaleString()}
+            </span>
+          </p>
+
+          <div className="space-y-4 text-left">
+            {order && <OrderProgress order={order} />}
+
+            {items.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Items in this order
+                </h3>
+                <div className="space-y-2">
+                  {items.map((it) => (
+                    <div
+                      key={it.id}
+                      className="flex justify-between text-sm text-gray-700 dark:text-gray-300"
+                    >
+                      <span>
+                        {it.product_name} x{it.quantity}
+                      </span>
+                      <span>RWF {it.subtotal.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={() => navigate("/cart")}
+                    className="flex-1 rounded-lg border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    View Cart
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate(`/orders/${order.id}`)}
+                className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+              >
+                Track Order
+              </button>
+
+              {order.payment_status !== "completed" && (
+                <button
+                  onClick={() => setShowUSSD(true)}
+                  className="w-full rounded-lg bg-green-600 py-3 font-medium text-white transition hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                >
+                  Complete Payment (USSD)
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => navigate("/")}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <ChevronLeft size={18} />
+              Continue Shopping
+            </button>
+          </div>
+
+          {showUSSD && (
+            <USSDPayment
+              amount={order.total_amount}
+              orderId={order.id}
+              onClose={() => setShowUSSD(false)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

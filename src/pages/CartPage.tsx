@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/useAuth";
 import { CartItem, Product } from "../types";
 import { Trash2, ChevronLeft, ShoppingCart } from "lucide-react";
+import Button from "../components/ui/Button";
 import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { useCartStore } from "../stores/useCartStore";
@@ -52,13 +53,18 @@ export default function CartPage({ onNavigate }: CartPageProps) {
       return;
     }
 
-    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = cartItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
     setItemCount(totalQuantity);
   }, [cartItems, clearCart, session?.user.id, setItemCount]);
 
   const handleRemoveItem = async (cartItemId: string) => {
     try {
-      cartQuery.setData((items) => (items || []).filter((item) => item.id !== cartItemId));
+      cartQuery.setData((items) =>
+        (items || []).filter((item) => item.id !== cartItemId),
+      );
 
       const { error } = await supabase
         .from("cart_items")
@@ -74,7 +80,10 @@ export default function CartPage({ onNavigate }: CartPageProps) {
     }
   };
 
-  const handleUpdateQuantity = async (cartItemId: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (
+    cartItemId: string,
+    newQuantity: number,
+  ) => {
     if (newQuantity <= 0) {
       await handleRemoveItem(cartItemId);
       return;
@@ -118,7 +127,7 @@ export default function CartPage({ onNavigate }: CartPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="container-app py-8">
         <button
           onClick={() => onNavigate("home")}
           className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -138,7 +147,9 @@ export default function CartPage({ onNavigate }: CartPageProps) {
 
         {cartQuery.error && cartItems.length === 0 ? (
           <div className="rounded-lg border border-red-200 bg-white p-8 text-center shadow dark:border-red-800 dark:bg-gray-800">
-            <p className="mb-4 text-red-600 dark:text-red-300">{cartQuery.error}</p>
+            <p className="mb-4 text-red-600 dark:text-red-300">
+              {cartQuery.error}
+            </p>
             <button
               type="button"
               onClick={() => void cartQuery.refetch()}
@@ -204,35 +215,51 @@ export default function CartPage({ onNavigate }: CartPageProps) {
                       </p>
 
                       <div className="flex w-fit items-center gap-3 rounded-lg border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700">
-                        <button
-                          onClick={() => void handleUpdateQuantity(item.id, item.quantity - 1)}
-                          className="px-3 py-1 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                        <Button
+                          onClick={() =>
+                            void handleUpdateQuantity(
+                              item.id,
+                              item.quantity - 1,
+                            )
+                          }
+                          className="px-3 py-1"
+                          variant="ghost"
                         >
                           -
-                        </button>
+                        </Button>
                         <span className="px-3 font-bold text-gray-900 dark:text-white">
                           {item.quantity}
                         </span>
-                        <button
-                          onClick={() => void handleUpdateQuantity(item.id, item.quantity + 1)}
-                          className="px-3 py-1 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                        <Button
+                          onClick={() =>
+                            void handleUpdateQuantity(
+                              item.id,
+                              item.quantity + 1,
+                            )
+                          }
+                          className="px-3 py-1"
+                          variant="ghost"
                         >
                           +
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <p className="mb-4 text-gray-600 dark:text-gray-400">
-                        RWF {((item.product?.price || 0) * item.quantity).toLocaleString()}
+                        RWF{" "}
+                        {(
+                          (item.product?.price || 0) * item.quantity
+                        ).toLocaleString()}
                       </p>
-                      <button
+                      <Button
                         onClick={() => void handleRemoveItem(item.id)}
-                        className="flex items-center gap-2 font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        className="flex items-center gap-2 font-medium text-red-600"
+                        variant="ghost"
                       >
                         <Trash2 size={18} />
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

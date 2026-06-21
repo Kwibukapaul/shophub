@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useToastStore } from "../stores/useToastStore";
+import { CheckCircle, AlertTriangle, Info } from "lucide-react";
 
 export default function Toasts() {
   const toasts = useToastStore((s) => s.toasts);
@@ -23,9 +24,19 @@ export default function Toasts() {
         <div
           key={t.id}
           onClick={() => t.onClick?.()}
-          className="max-w-sm cursor-pointer rounded-lg bg-white px-4 py-3 shadow-lg dark:bg-gray-800"
+          className="max-w-sm cursor-pointer card flex items-start gap-3 p-3"
         >
-          <div className="text-sm text-gray-900 dark:text-gray-100">
+          <div className="mt-1">
+            {t.type === "success" ? (
+              <CheckCircle className="text-green-500" />
+            ) : t.type === "error" ? (
+              <AlertTriangle className="text-red-500" />
+            ) : (
+              <Info className="text-slate-500" />
+            )}
+          </div>
+
+          <div className="flex-1 text-sm text-slate-900 dark:text-slate-100">
             {t.message}
           </div>
         </div>

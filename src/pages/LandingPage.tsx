@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ShieldCheck,
-  ShoppingCart,
   Sparkles,
   Truck,
 } from "lucide-react";
@@ -14,23 +13,24 @@ import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { offlineMessage } from "../lib/errorHandling";
 import Footer from "../components/Footer";
+import Carousel from "../components/Carousel";
+import ProductCard from "../components/ProductCard";
+import CategoryTile from "../components/ui/CategoryTile";
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
   setCategorySlug: (slug: string) => void;
-  setProductId?: (id: string) => void;
 }
 
 export default function LandingPage({
   onNavigate,
   setCategorySlug,
-  setProductId,
 }: LandingPageProps) {
   const { session } = useAuth();
   const isOnline = useOnlineStatus();
-  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(
-    null,
-  );
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<
+    string | null
+  >(null);
 
   const categoriesQuery = usePersistentQuery<Category[]>({
     queryKey: "homepage-categories",
@@ -123,59 +123,7 @@ export default function LandingPage({
     }
   };
 
-  const handleViewProduct = (id: string) => {
-    if (setProductId) {
-      setProductId(id);
-      return;
-    }
-
-    onNavigate(`product/${id}`);
-  };
-
-  const handleAddToCart = async (productId: string) => {
-    try {
-      if (!session) {
-        onNavigate("signup");
-        return;
-      }
-
-      const { data: existing, error: existingError } = await supabase
-        .from("cart_items")
-        .select("id, quantity")
-        .eq("user_id", session.user.id)
-        .eq("product_id", productId)
-        .maybeSingle();
-
-      if (existingError) {
-        throw existingError;
-      }
-
-      if (existing) {
-        const { error } = await supabase
-          .from("cart_items")
-          .update({ quantity: existing.quantity + 1 })
-          .eq("id", existing.id);
-
-        if (error) {
-          throw error;
-        }
-      } else {
-        const { error } = await supabase.from("cart_items").insert({
-          user_id: session.user.id,
-          product_id: productId,
-          quantity: 1,
-        });
-
-        if (error) {
-          throw error;
-        }
-      }
-
-      onNavigate("cart");
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-    }
-  };
+  // Product view and add-to-cart logic is handled inside `ProductCard`.
 
   const retryAll = () => {
     void categoriesQuery.refetch();
@@ -189,7 +137,7 @@ export default function LandingPage({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-6 py-12">
+      <div className="container-app py-12">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-600 dark:text-blue-400">
@@ -243,14 +191,15 @@ export default function LandingPage({
             </div>
 
             <h2 className="max-w-3xl text-4xl font-bold leading-tight md:text-5xl">
-              Find products faster, shop with confidence, and enjoy a smoother checkout.
+              Find products faster, shop with confidence, and enjoy a smoother
+              checkout.
             </h2>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-gray-200">
               ShopHub helps customers discover quality products, compare options
               easily, and order in a clean and reliable shopping experience.
-              Whether you are browsing essentials or something new, everything is
-              designed to be simple and useful.
+              Whether you are browsing essentials or something new, everything
+              is designed to be simple and useful.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -300,6 +249,35 @@ export default function LandingPage({
           </div>
         </section>
 
+        {/* Latest / Trending slides */}
+        <section className="mb-10">
+          <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+            Latest arrivals
+          </h3>
+          <Carousel
+            items={featuredProducts.slice(0, 6).map((p) => ({
+              id: p.id,
+              image: p.image_urls?.[0] || "/",
+              title: p.name,
+              subtitle: `RWF ${p.price.toLocaleString()}`,
+            }))}
+          />
+        </section>
+
+        <section className="mb-10">
+          <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+            Trending products
+          </h3>
+          <Carousel
+            items={featuredProducts.slice(0, 6).map((p) => ({
+              id: `trend-${p.id}`,
+              image: p.image_urls?.[0] || "/",
+              title: p.name,
+              subtitle: `Popular — RWF ${p.price.toLocaleString()}`,
+            }))}
+          />
+        </section>
+
         <section className="mb-10">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
@@ -324,31 +302,13 @@ export default function LandingPage({
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {categories.map((category) => (
-                <button
+                <CategoryTile
                   key={category.id}
-                  type="button"
+                  name={category.name}
+                  image={isOnline ? category.image_url : null}
+                  subtitle="View products"
                   onClick={() => handleCategoryFilter(category.slug)}
-                  className="relative h-44 overflow-hidden rounded-lg shadow-lg transition hover:shadow-xl"
-                >
-                  {isOnline && category.image_url ? (
-                    <img
-                      src={category.image_url}
-                      alt={category.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-gray-300 to-gray-500 dark:from-gray-700 dark:to-gray-800" />
-                  )}
-                  <div className="absolute inset-0 bg-black/45" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-                    <h3 className="text-2xl font-bold text-white">
-                      {category.name}
-                    </h3>
-                    <span className="mt-3 rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
-                      View products
-                    </span>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           )}
@@ -367,16 +327,17 @@ export default function LandingPage({
                 Browse what customers can order today
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 dark:text-gray-300 md:text-base">
-                Browse our latest active products, filter by category, and discover
-                a faster path from browsing to checkout.
+                Browse our latest active products, filter by category, and
+                discover a faster path from browsing to checkout.
               </p>
             </div>
 
-            {featuredProductsQuery.isFetching && featuredProducts.length > 0 && (
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Refreshing products...
-              </span>
-            )}
+            {featuredProductsQuery.isFetching &&
+              featuredProducts.length > 0 && (
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Refreshing products...
+                </span>
+              )}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -416,60 +377,9 @@ export default function LandingPage({
               No products found for this category yet.
             </div>
           ) : (
-            <div className="mt-8 grid gap-6 md:grid-cols-3 lg:grid-cols-4">
+            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {featuredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="rounded-lg bg-white p-4 shadow-lg dark:bg-gray-800 dark:shadow-gray-900/40"
-                >
-                  {isOnline && product.image_urls?.[0] ? (
-                    <img
-                      src={product.image_urls[0]}
-                      alt={product.name}
-                      className="h-44 w-full rounded object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-44 w-full items-center justify-center rounded bg-gradient-to-br from-gray-200 to-gray-300 text-sm font-semibold text-gray-600 dark:from-gray-700 dark:to-gray-800 dark:text-gray-300">
-                      Product image unavailable
-                    </div>
-                  )}
-
-                  <div className="p-5">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        {product.name}
-                      </h3>
-                    </div>
-
-                    <p className="mb-4 min-h-[3rem] text-sm leading-6 text-gray-600 dark:text-gray-300">
-                      {product.description}
-                    </p>
-
-                    <div className="mb-4 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                      RWF {product.price.toLocaleString()}
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleViewProduct(product.id)}
-                        className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                      >
-                        View
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => void handleAddToCart(product.id)}
-                        className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-blue-700 dark:hover:bg-blue-600"
-                        disabled={product.stock_quantity === 0}
-                      >
-                        <ShoppingCart size={16} className="mr-1 inline" />
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { X } from "lucide-react";
+import { useState } from "react";
+import { X, Phone } from "lucide-react";
 import { useAuth } from "../context/useAuth";
 import { useToastStore } from "../stores/useToastStore";
 
@@ -62,15 +62,15 @@ export default function USSDPayment({ amount, orderId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+      <div className="w-full max-w-md card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Complete Payment
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <Phone size={18} /> Complete Payment
           </h3>
           <button
             onClick={onClose}
             aria-label="close"
-            className="text-gray-600"
+            className="text-slate-600 dark:text-slate-300"
           >
             <X />
           </button>
@@ -82,14 +82,14 @@ export default function USSDPayment({ amount, orderId, onClose }: Props) {
           copied to your clipboard so you can manually dial it.
         </p>
 
-        <label className="mb-2 block text-sm text-gray-700 dark:text-gray-300">
+        <label className="mb-2 block text-sm text-slate-700 dark:text-slate-300">
           Phone number for payment
         </label>
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="e.g. 250788123456"
-          className="mb-4 w-full rounded border px-3 py-2 text-gray-900 dark:bg-gray-700 dark:text-white"
+          className="mb-4 w-full rounded border px-3 py-2 text-slate-900 dark:bg-gray-700 dark:text-white"
         />
 
         <div className="mb-4 text-sm text-gray-700 dark:text-gray-300">
@@ -100,7 +100,7 @@ export default function USSDPayment({ amount, orderId, onClose }: Props) {
           <button
             onClick={initiate}
             disabled={running}
-            className="flex-1 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+            className="flex-1 btn disabled:opacity-50"
           >
             {running ? "Starting..." : "Run USSD & Copy Code"}
           </button>
