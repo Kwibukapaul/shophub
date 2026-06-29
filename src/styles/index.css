@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Aggregate style imports */
+@import "./variables.css";
+@import "./themes.css";
+@import "./base.css";
+@import "./components.css";
+@import "./utilities.css";
+@import "./animations.css";

@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   Search,
+  ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -19,6 +20,9 @@ import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { getOrderProgressPercent } from "../lib/orderProgress";
 import { useCartStore } from "../stores/useCartStore";
 import Badge from "./ui/Badge";
+import StyledButton from "./ui/StyledButton";
+import { motion, AnimatePresence } from "framer-motion";
+import { dropdownVariants } from "../lib/animationPresets";
 
 interface NavigationProps {
   userProfile?: UserProfile | null;
@@ -104,75 +108,97 @@ export default function Navigation({ userProfile }: NavigationProps) {
           <div className="hidden md:flex md:items-center md:gap-6">
             <button
               onClick={() => navigate("/")}
-              className="text-sm text-slate-600 dark:text-slate-300"
+              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               Home
             </button>
 
-            <div className="relative">
+            <div className="relative group">
               <button
                 onClick={() => setCatOpen((open) => !open)}
-                className="text-sm text-slate-600 dark:text-slate-300"
+                className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 Categories
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${catOpen ? "rotate-180" : ""}`}
+                />
               </button>
-              {catOpen && (
-                <div className="absolute left-0 mt-2 w-64 rounded-md bg-white p-3 shadow-md dark:bg-gray-800">
-                  {categories.length === 0 && categoriesQuery.isLoading && (
-                    <p className="px-3 py-2 text-sm text-gray-500">
-                      Loading categories...
-                    </p>
-                  )}
-                  {categories.length === 0 && categoriesQuery.error && (
-                    <button
-                      onClick={() => void categoriesQuery.refetch()}
-                      className="block w-full px-3 py-2 text-left text-sm text-red-600"
-                    >
-                      Retry categories
-                    </button>
-                  )}
-                  <div className="grid grid-cols-1 gap-1">
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          setCatOpen(false);
-                          navigate(`/category/${category.slug}`);
-                        }}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700"
+              <AnimatePresence>
+                {catOpen && (
+                  <motion.div
+                    variants={dropdownVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="absolute left-0 mt-2 w-72 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                  >
+                    <div className="p-4">
+                      {categories.length === 0 && categoriesQuery.isLoading && (
+                        <p className="px-3 py-2 text-sm text-gray-500">
+                          Loading categories...
+                        </p>
+                      )}
+                      {categories.length === 0 && categoriesQuery.error && (
+                        <button
+                          onClick={() => void categoriesQuery.refetch()}
+                          className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                        >
+                          Retry categories
+                        </button>
+                      )}
+                      <div className="space-y-1">
+                        {categories.map((category, idx) => (
+                          <motion.button
+                            key={category.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            onClick={() => {
+                              setCatOpen(false);
+                              navigate(`/category/${category.slug}`);
+                            }}
+                            className="block w-full px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400 rounded transition"
+                          >
+                            {category.name}
+                          </motion.button>
+                        ))}
+                      </div>
+                      <motion.div
+                        className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.15 }}
                       >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-2 border-t pt-2">
-                    <div className="flex items-center gap-2">
-                      <Badge color="blue">Electronics</Badge>
-                      <Badge color="pink">Fashion</Badge>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge color="blue">Electronics</Badge>
+                          <Badge color="pink">Fashion</Badge>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Quick access to featured categories
+                        </p>
+                      </motion.div>
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
-                      Quick links to our flagship categories.
-                    </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <button
               onClick={() => navigate("/contact")}
-              className="text-sm text-slate-600 dark:text-slate-300"
+              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               Contact
             </button>
             <button
               onClick={() => navigate("/dashboard")}
-              className="text-sm text-slate-600 dark:text-slate-300"
+              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               Dashboard
             </button>
             <button
               onClick={() => navigate("/about")}
-              className="text-sm text-slate-600 dark:text-slate-300"
+              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               About
             </button>
@@ -225,67 +251,93 @@ export default function Navigation({ userProfile }: NavigationProps) {
               <button
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-label="menu"
-                className="p-2 rounded-md hover:bg-slate-50 dark:hover:bg-gray-800"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               >
                 <MoreHorizontal />
               </button>
 
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-md bg-white p-2 shadow-md dark:bg-gray-800">
-                  <button
-                    onClick={toggleTheme}
-                    className="flex w-full items-center gap-2 px-2 py-2 text-left"
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    variants={dropdownVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="absolute right-0 mt-2 w-52 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
                   >
-                    {isDark ? <Sun size={16} /> : <Moon size={16} />} Theme
-                  </button>
+                    <div className="p-2 space-y-1">
+                      <button
+                        onClick={() => {
+                          toggleTheme();
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                      >
+                        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                        {isDark ? "Light Mode" : "Dark Mode"}
+                      </button>
 
-                  <button
-                    onClick={() => navigate("/profile")}
-                    className="flex w-full items-center gap-2 px-2 py-2 text-left"
-                  >
-                    <User size={16} /> Profile
-                  </button>
+                      <button
+                        onClick={() => {
+                          navigate("/profile");
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                      >
+                        <User size={16} /> Profile
+                      </button>
 
-                  <button
-                    onClick={() => navigate("/orders")}
-                    className="flex w-full items-center gap-2 px-2 py-2 text-left"
-                  >
-                    <Package size={16} /> Orders
-                  </button>
+                      <button
+                        onClick={() => {
+                          navigate("/orders");
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                      >
+                        <Package size={16} /> Orders
+                      </button>
 
-                  <button
-                    onClick={() => navigate("/settings")}
-                    className="flex w-full items-center gap-2 px-2 py-2 text-left"
-                  >
-                    Settings
-                  </button>
+                      <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
 
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-2 py-2 text-left"
-                  >
-                    <LogOut size={16} /> Logout
-                  </button>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                      >
+                        <LogOut size={16} /> Logout
+                      </button>
 
-                  {userProfile?.full_name && (
-                    <p className="mt-2 border-t pt-2 text-xs text-slate-500">
-                      Signed in as {userProfile.full_name}
-                    </p>
-                  )}
-                </div>
-              )}
+                      {userProfile?.full_name && (
+                        <p className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-slate-500 dark:text-slate-400">
+                          Signed in as{" "}
+                          <span className="font-medium">
+                            {userProfile.full_name}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="hidden md:flex gap-2">
-              <button
+              <StyledButton
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate("/login")}
-                className="text-sm text-slate-600 dark:text-slate-300"
               >
                 Login
-              </button>
-              <button onClick={() => navigate("/signup")} className="btn">
+              </StyledButton>
+              <StyledButton
+                variant="primary"
+                size="sm"
+                onClick={() => navigate("/signup")}
+              >
                 Sign Up
-              </button>
+              </StyledButton>
             </div>
           )}
 

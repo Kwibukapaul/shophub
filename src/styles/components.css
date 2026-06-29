@@ -1,0 +1,206 @@
+@layer components {
+  /* Containers */
+  .container-app {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+  }
+
+  .container-sm {
+    @apply mx-auto px-4 sm:px-6 max-w-2xl;
+  }
+
+  .container-md {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl;
+  }
+
+  /* Cards */
+  .card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    @apply p-4 md:p-6;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer transition-all duration-300;
+  }
+
+  .card-interactive:hover {
+    background-color: var(--bg-secondary);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-primary-700;
+  }
+
+  .btn-primary:focus:not(:disabled) {
+    @apply ring-2 ring-offset-2 ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-neutral-200 text-neutral-900;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply bg-neutral-300;
+  }
+
+  .btn-outline {
+    @apply btn border-2 border-neutral-300 text-neutral-700;
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    @apply bg-neutral-50;
+  }
+
+  .btn-ghost {
+    @apply btn text-neutral-700;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    @apply bg-neutral-100;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-md {
+    @apply px-4 py-2 text-base;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-100 text-primary-700;
+  }
+
+  .badge-secondary {
+    @apply badge bg-secondary-100 text-secondary-700;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent-100 text-accent-700;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-700;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-700;
+  }
+
+  .badge-error {
+    @apply badge bg-red-100 text-red-700;
+  }
+
+  /* Forms */
+  .input {
+    @apply w-full px-4 py-2 rounded-lg border border-neutral-300 text-neutral-900 transition-colors duration-300;
+    background-color: var(--bg-primary);
+  }
+
+  .input:focus {
+    @apply outline-none border-primary-500 ring-2 ring-primary-200;
+  }
+
+  .input::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  .input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    background-color: var(--bg-secondary);
+  }
+
+  /* Text utilities */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent;
+  }
+
+  .text-truncate {
+    @apply truncate;
+  }
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn var(--animation-duration-normal) var(--animation-easing-ease);
+  }
+
+  .animate-slide-up {
+    animation: slideUp var(--animation-duration-normal) var(--animation-easing-ease);
+  }
+
+  .animate-scale-in {
+    animation: scaleIn var(--animation-duration-normal) var(--animation-easing-ease);
+  }
+
+  /* Scrollbar Styling */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Focus Ring */
+  .focus-ring {
+    @apply ring-2 ring-offset-2 ring-primary-500 outline-none;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply inline-block animate-spin rounded-full;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--color-primary-600);
+  }
+
+  .spinner-sm {
+    @apply spinner h-4 w-4;
+  }
+
+  .spinner-md {
+    @apply spinner h-6 w-6;
+  }
+
+  .spinner-lg {
+    @apply spinner h-8 w-8;
+  }
+
+  .page-hero {
+    @apply w-full rounded-lg p-8 bg-gradient-to-r from-white to-slate-50 shadow-md;
+  }
+}

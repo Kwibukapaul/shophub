@@ -10,6 +10,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import StoreManagerLayout from "./pages/store-manager/StoreManagerLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AuthGate from "./components/AuthGate";
+import ThemeProvider from "./components/ThemeProvider";
 
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
@@ -71,44 +72,48 @@ function App() {
 
   if (session && role === "admin") {
     return (
-      <Routes>
-        <Route
-          path="/admin/*"
-          element={renderWithBoundary(
-            "admin-layout",
-            <AdminLayout
-              onLogout={async () => {
-                await signOut();
-                navigate("/");
-              }}
-              userProfile={userProfile}
-            />,
-          )}
-        />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
+      <ThemeProvider>
+        <Routes>
+          <Route
+            path="/admin/*"
+            element={renderWithBoundary(
+              "admin-layout",
+              <AdminLayout
+                onLogout={async () => {
+                  await signOut();
+                  navigate("/");
+                }}
+                userProfile={userProfile}
+              />,
+            )}
+          />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      </ThemeProvider>
     );
   }
 
   if (session && role === "store_manager") {
     return (
-      <Routes>
-        <Route
-          path="/store-manager/*"
-          element={renderWithBoundary(
-            "store-manager-layout",
-            <StoreManagerLayout
-              onLogout={async () => {
-                await signOut();
-                navigate("/");
-              }}
-              userProfile={userProfile}
-              storeId={storeId}
-            />,
-          )}
-        />
-        <Route path="*" element={<Navigate to="/store-manager" replace />} />
-      </Routes>
+      <ThemeProvider>
+        <Routes>
+          <Route
+            path="/store-manager/*"
+            element={renderWithBoundary(
+              "store-manager-layout",
+              <StoreManagerLayout
+                onLogout={async () => {
+                  await signOut();
+                  navigate("/");
+                }}
+                userProfile={userProfile}
+                storeId={storeId}
+              />,
+            )}
+          />
+          <Route path="*" element={<Navigate to="/store-manager" replace />} />
+        </Routes>
+      </ThemeProvider>
     );
   }
 
@@ -167,103 +172,108 @@ function App() {
   }
 
   return (
-    <ErrorBoundary
-      resetKey="app-shell"
-      title="The app shell hit a problem."
-      description="Route-level crashes are isolated, but this catches layout-level issues."
-    >
-      <AuthGate>
-        <div className={`min-h-screen ${isDark ? "dark" : ""}`}>
-          <Navigation userProfile={userProfile} />
-          <Toasts />
+    <ThemeProvider>
+      <ErrorBoundary
+        resetKey="app-shell"
+        title="The app shell hit a problem."
+        description="Route-level crashes are isolated, but this catches layout-level issues."
+      >
+        <AuthGate>
+          <div className={`min-h-screen ${isDark ? "dark" : ""}`}>
+            <Navigation userProfile={userProfile} />
+            <Toasts />
 
-          <Routes>
-            <Route
-              path="/"
-              element={renderWithBoundary(
-                "home",
-                <HomePage
-                  setCategorySlug={(slug) => navigate(`/category/${slug}`)}
-                />,
-              )}
-            />
-            <Route
-              path="/dashboard"
-              element={renderWithBoundary("dashboard", <UserDashboard />)}
-            />
-            <Route
-              path="/category/:slug"
-              element={renderWithBoundary("category", <CategoryPage />)}
-            />
-            <Route
-              path="/product/:id"
-              element={renderWithBoundary("product", <ProductDetail />)}
-            />
-            <Route
-              path="/cart"
-              element={renderWithBoundary(
-                "cart",
-                <CartPage onNavigate={handleNavigate} />,
-              )}
-            />
-            <Route
-              path="/checkout"
-              element={renderWithBoundary(
-                "checkout",
-                <CheckoutPage
-                  onNavigate={handleNavigate}
-                  setOrderId={(id) => navigate(`/order-confirmation/${id}`)}
-                />,
-              )}
-            />
-            <Route
-              path="/order-confirmation/:id"
-              element={renderWithBoundary(
-                "order-confirmation",
-                <OrderConfirmation />,
-              )}
-            />
-            <Route
-              path="/orders"
-              element={renderWithBoundary("orders", <OrderHistory />)}
-            />
-            <Route
-              path="/orders/:id"
-              element={renderWithBoundary("order-tracking", <OrderTracking />)}
-            />
-            <Route
-              path="/order-tracking"
-              element={<Navigate to="/orders" replace />}
-            />
-            <Route
-              path="/profile"
-              element={renderWithBoundary(
-                "profile",
-                <ProfilePage onNavigate={handleNavigate} />,
-              )}
-            />
-            <Route
-              path="/contact"
-              element={renderWithBoundary("contact", <Contact />)}
-            />
-            <Route
-              path="/about"
-              element={renderWithBoundary("about", <About />)}
-            />
-            <Route
-              path="/reviews"
-              element={renderWithBoundary(
-                "reviews",
-                <PlatformReviews onNavigate={handleNavigate} />,
-              )}
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <Footer />
-          <WhatsAppChat />
-        </div>
-      </AuthGate>
-    </ErrorBoundary>
+            <Routes>
+              <Route
+                path="/"
+                element={renderWithBoundary(
+                  "home",
+                  <HomePage
+                    setCategorySlug={(slug) => navigate(`/category/${slug}`)}
+                  />,
+                )}
+              />
+              <Route
+                path="/dashboard"
+                element={renderWithBoundary("dashboard", <UserDashboard />)}
+              />
+              <Route
+                path="/category/:slug"
+                element={renderWithBoundary("category", <CategoryPage />)}
+              />
+              <Route
+                path="/product/:id"
+                element={renderWithBoundary("product", <ProductDetail />)}
+              />
+              <Route
+                path="/cart"
+                element={renderWithBoundary(
+                  "cart",
+                  <CartPage onNavigate={handleNavigate} />,
+                )}
+              />
+              <Route
+                path="/checkout"
+                element={renderWithBoundary(
+                  "checkout",
+                  <CheckoutPage
+                    onNavigate={handleNavigate}
+                    setOrderId={(id) => navigate(`/order-confirmation/${id}`)}
+                  />,
+                )}
+              />
+              <Route
+                path="/order-confirmation/:id"
+                element={renderWithBoundary(
+                  "order-confirmation",
+                  <OrderConfirmation />,
+                )}
+              />
+              <Route
+                path="/orders"
+                element={renderWithBoundary("orders", <OrderHistory />)}
+              />
+              <Route
+                path="/orders/:id"
+                element={renderWithBoundary(
+                  "order-tracking",
+                  <OrderTracking />,
+                )}
+              />
+              <Route
+                path="/order-tracking"
+                element={<Navigate to="/orders" replace />}
+              />
+              <Route
+                path="/profile"
+                element={renderWithBoundary(
+                  "profile",
+                  <ProfilePage onNavigate={handleNavigate} />,
+                )}
+              />
+              <Route
+                path="/contact"
+                element={renderWithBoundary("contact", <Contact />)}
+              />
+              <Route
+                path="/about"
+                element={renderWithBoundary("about", <About />)}
+              />
+              <Route
+                path="/reviews"
+                element={renderWithBoundary(
+                  "reviews",
+                  <PlatformReviews onNavigate={handleNavigate} />,
+                )}
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <Footer />
+            <WhatsAppChat />
+          </div>
+        </AuthGate>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

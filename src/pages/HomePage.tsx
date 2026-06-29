@@ -6,8 +6,14 @@ import CategoryTile from "../components/ui/CategoryTile";
 import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { offlineMessage } from "../lib/errorHandling";
-
 import { useShopFiltersStore } from "../stores/useShopFiltersStore";
+import { motion } from "framer-motion";
+import {
+  staggerContainerVariants,
+  staggerItemVariants,
+} from "../lib/animationPresets";
+import StyledButton from "../components/ui/StyledButton";
+import StyledCard from "../components/ui/StyledCard";
 
 interface HomePageProps {
   setCategorySlug: (slug: string) => void;
@@ -155,10 +161,14 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
     (featuredProducts.length === 0 ? featuredProductsQuery.error : null);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container-app py-12">
         {pageError && (
-          <div className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+          >
             <span>{pageError}</span>
             <button
               type="button"
@@ -167,119 +177,209 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
             >
               Retry
             </button>
-          </div>
+          </motion.div>
         )}
 
         <div className="flex gap-6">
-          <aside className="hidden w-64 md:block">
-            <div className="card h-full p-4">
-              <h3 className="mb-4 text-lg font-semibold">Partner Stores</h3>
-              <nav className="flex-1 space-y-2">
-                <button
+          {/* Sidebar */}
+          <motion.aside
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden w-64 md:block"
+          >
+            <StyledCard variant="default" className="h-full">
+              <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white">
+                Partner Stores
+              </h3>
+              <nav className="flex-1 space-y-2 mb-8">
+                <StyledButton
+                  variant={!selectedStoreId ? "primary" : "outline"}
+                  size="sm"
                   onClick={() => setSelectedStoreId(null)}
-                  className={`w-full rounded-md px-3 py-2 text-left transition ${!selectedStoreId ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+                  className="w-full justify-start"
                 >
                   All Stores
-                </button>
+                </StyledButton>
 
-                {partnerStores.map((store) => (
-                  <button
-                    key={store.id}
-                    onClick={() => setSelectedStoreId(store.id)}
-                    className={`w-full rounded-md px-3 py-2 text-left transition ${selectedStoreId === store.id ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
-                  >
-                    {store.name}
-                  </button>
-                ))}
+                <motion.div
+                  variants={staggerContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-2"
+                >
+                  {partnerStores.map((store) => (
+                    <motion.div key={store.id} variants={staggerItemVariants}>
+                      <StyledButton
+                        variant={
+                          selectedStoreId === store.id ? "primary" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => setSelectedStoreId(store.id)}
+                        className="w-full justify-start"
+                      >
+                        {store.name}
+                      </StyledButton>
+                    </motion.div>
+                  ))}
+                </motion.div>
               </nav>
 
-              <div className="mt-auto text-sm text-slate-500">
-                <p className="text-xs">Contact</p>
-                <p className="mt-1">support@shophub.example.com</p>
+              <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-500 mb-2">
+                  Support
+                </p>
+                <p className="break-words">support@shophub.example.com</p>
               </div>
-            </div>
-          </aside>
+            </StyledCard>
+          </motion.aside>
 
-          <main className="flex-1 md:pl-6">
-            <div className="mb-8 flex items-center justify-between gap-4">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Shop by Category
-              </h2>
-              {categoriesQuery.isFetching && categories.length > 0 && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Refreshing...
-                </span>
+          {/* Main Content */}
+          <main className="flex-1">
+            {/* Categories Section */}
+            <motion.section
+              variants={staggerContainerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              className="mb-12"
+            >
+              <motion.div variants={staggerItemVariants} className="mb-8">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
+                      Browse
+                    </p>
+                    <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                      Shop by Category
+                    </h2>
+                  </div>
+                  {categoriesQuery.isFetching && categories.length > 0 && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Refreshing...
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+
+              {categoriesQuery.isLoading && categories.length === 0 ? (
+                <motion.div
+                  variants={staggerItemVariants}
+                  className="rounded-lg bg-white dark:bg-gray-800 p-6 text-sm text-gray-500 shadow"
+                >
+                  Loading categories...
+                </motion.div>
+              ) : (
+                <motion.div
+                  variants={staggerContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid gap-6 md:grid-cols-2"
+                >
+                  {categories.map((category, idx) => (
+                    <motion.div
+                      key={category.id}
+                      variants={staggerItemVariants}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <CategoryTile
+                        name={category.name}
+                        image={isOnline ? category.image_url : null}
+                        onClick={() => handleCategoryClick(category.slug)}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
               )}
-            </div>
+            </motion.section>
 
-            {categoriesQuery.isLoading && categories.length === 0 ? (
-              <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow dark:bg-gray-800 dark:text-gray-300">
-                Loading categories...
-              </div>
-            ) : (
-              <div className="mb-8 grid gap-6 md:grid-cols-2">
-                {categories.map((category) => (
-                  <CategoryTile
-                    key={category.id}
-                    name={category.name}
-                    image={isOnline ? category.image_url : null}
-                    onClick={() => handleCategoryClick(category.slug)}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Products Section */}
+            <motion.section
+              variants={staggerContainerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+            >
+              <motion.div variants={staggerItemVariants} className="mb-8">
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
+                      Discover
+                    </p>
+                    <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                      Products
+                    </h2>
+                  </div>
+                  {featuredProductsQuery.isFetching &&
+                    featuredProducts.length > 0 && (
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Refreshing...
+                      </span>
+                    )}
+                </div>
 
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Products
-              </h2>
-              {featuredProductsQuery.isFetching &&
-                featuredProducts.length > 0 && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Refreshing...
-                  </span>
-                )}
-            </div>
+                {/* Search Input */}
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Search Products
+                  </label>
+                  <div className="flex items-center gap-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary-500 dark:focus-within:ring-primary-400">
+                    <Search
+                      size={18}
+                      className="text-gray-400 dark:text-gray-500"
+                    />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search by product name, description, SKU, or slug"
+                      className="w-full bg-transparent text-sm text-gray-900 dark:text-white outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    />
+                  </div>
+                </div>
+              </motion.div>
 
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Search Products
-              </label>
-              <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <Search
-                  size={18}
-                  className="text-gray-400 dark:text-gray-500"
-                />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by product name, description, SKU, or slug"
-                  className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
-                />
-              </div>
-            </div>
-
-            {featuredProductsQuery.isLoading &&
-            featuredProducts.length === 0 ? (
-              <div className="card p-6 text-sm text-slate-500">
-                Loading products...
-              </div>
-            ) : featuredProducts.length === 0 ? (
-              <div className="card p-6 text-sm text-slate-500">
-                No products found for this filter.
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="card p-6 text-sm text-slate-500">
-                No products match "{searchTerm.trim()}".
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
+              {/* Products Grid */}
+              {featuredProductsQuery.isLoading &&
+              featuredProducts.length === 0 ? (
+                <motion.div
+                  variants={staggerItemVariants}
+                  className="rounded-lg bg-white dark:bg-gray-800 p-6 text-sm text-gray-500 dark:text-gray-400 shadow"
+                >
+                  Loading products...
+                </motion.div>
+              ) : featuredProducts.length === 0 ? (
+                <motion.div
+                  variants={staggerItemVariants}
+                  className="rounded-lg bg-white dark:bg-gray-800 p-6 text-sm text-gray-500 dark:text-gray-400 shadow"
+                >
+                  No products found for this filter.
+                </motion.div>
+              ) : filteredProducts.length === 0 ? (
+                <motion.div
+                  variants={staggerItemVariants}
+                  className="rounded-lg bg-white dark:bg-gray-800 p-6 text-sm text-gray-500 dark:text-gray-400 shadow"
+                >
+                  No products match "{searchTerm.trim()}".
+                </motion.div>
+              ) : (
+                <motion.div
+                  variants={staggerContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                >
+                  {filteredProducts.map((product, idx) => (
+                    <motion.div
+                      key={product.id}
+                      variants={staggerItemVariants}
+                      transition={{ delay: idx * 0.02 }}
+                    >
+                      <ProductCard product={product} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </motion.section>
           </main>
         </div>
       </div>

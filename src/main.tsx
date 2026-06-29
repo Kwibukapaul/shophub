@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import "./index.css";
+import "./styles/index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -16,5 +16,5 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

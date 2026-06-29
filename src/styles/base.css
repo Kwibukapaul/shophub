@@ -1,0 +1,69 @@
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-base;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    transition: background-color 300ms ease, color 300ms ease;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl font-extrabold;
+    line-height: var(--line-height-tight);
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl font-bold;
+    line-height: var(--line-height-snug);
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl font-bold;
+    line-height: var(--line-height-snug);
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl font-semibold;
+    line-height: var(--line-height-normal);
+  }
+
+  h5 {
+    @apply text-lg font-semibold;
+    line-height: var(--line-height-normal);
+  }
+
+  h6 {
+    @apply text-base font-semibold;
+    line-height: var(--line-height-normal);
+  }
+
+  p {
+    line-height: var(--line-height-relaxed);
+  }
+
+  a {
+    @apply transition-colors duration-300;
+    color: var(--color-primary-600);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-primary-700);
+  }
+
+  button {
+    @apply transition-colors duration-300;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply transition-colors duration-300;
+  }
+}
