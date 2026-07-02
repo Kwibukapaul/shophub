@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Category, Product } from "../types";
-import { ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { Moon, ShieldCheck, Sparkles, Sun, Truck } from "lucide-react";
 import { useAuth } from "../context/useAuth";
+import { useTheme } from "../context/ThemeContext";
 import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { offlineMessage } from "../lib/errorHandling";
@@ -27,6 +28,7 @@ export default function LandingPage({
   setCategorySlug,
 }: LandingPageProps) {
   const { session } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const isOnline = useOnlineStatus();
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<
     string | null
@@ -137,7 +139,17 @@ export default function LandingPage({
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
-      <div className="container-app py-12">
+      <div className="container-app py-6 sm:py-8">
+        <div className="mb-6 flex justify-end">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/80 px-4 py-2 text-sm font-medium text-stone-900 shadow-sm backdrop-blur transition hover:bg-stone-100 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-white dark:hover:bg-neutral-700"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            {isDark ? "Light mode" : "Dark mode"}
+          </button>
+        </div>
         {/* Hero Section */}
         <HeroSection
           isAuthenticated={!!session}
