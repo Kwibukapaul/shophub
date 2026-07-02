@@ -19,31 +19,27 @@ export default function FeatureCard({
       initial="initial"
       whileInView="hover"
       viewport={{ once: true, margin: "-100px" }}
-      className="group rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-lg hover:shadow-2xl transition-shadow"
+      className="group rounded-[24px] border border-stone-200/80 bg-white/90 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_24px_80px_-30px_rgba(15,23,42,0.45)] dark:border-neutral-700 dark:bg-neutral-800/90"
     >
-      {/* Icon Container */}
       <motion.div
-        className="inline-flex p-3 rounded-xl bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-900/30 dark:to-primary-800/20"
+        className="inline-flex rounded-2xl bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100 p-3 dark:from-amber-900/40 dark:via-orange-900/20 dark:to-rose-900/20"
         initial={{ scale: 1 }}
-        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileHover={{ scale: 1.08, rotate: 4 }}
         transition={{ type: "spring", stiffness: 400 }}
       >
-        <Icon className="text-primary-600 dark:text-primary-400" size={24} />
+        <Icon className="text-amber-600 dark:text-amber-300" size={24} />
       </motion.div>
 
-      {/* Title */}
-      <h3 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
+      <h3 className="mt-4 text-lg font-semibold text-stone-900 dark:text-white">
         {title}
       </h3>
 
-      {/* Description */}
-      <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-400">
+      <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-stone-400">
         {description}
       </p>
 
-      {/* Accent Line */}
       <motion.div
-        className="mt-4 h-0.5 w-0 bg-gradient-to-r from-primary-600 to-secondary-600 group-hover:w-12 transition-all duration-300"
+        className="mt-4 h-0.5 w-0 bg-gradient-to-r from-amber-500 to-orange-500 group-hover:w-12 transition-all duration-300"
         initial={{ width: 0 }}
         whileHover={{ width: 48 }}
       />

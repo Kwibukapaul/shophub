@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { Order, OrderItem } from "../types";
 import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import OrderProgress from "../components/OrderProgress";
+import StyledButton from "../components/ui/StyledButton";
 import { useState } from "react";
 import { useToastStore } from "../stores/useToastStore";
 
@@ -102,12 +103,14 @@ export default function OrderTracking() {
   });
 
   const data = trackingQuery.data || { order: null, items: [], history: [] };
+  const [cancelling, setCancelling] = useState(false);
+  const pushToast = useToastStore((s) => s.push);
 
   if (trackingQuery.isLoading && !data.order) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow dark:bg-gray-800 dark:text-gray-300">
+          <div className="rounded-[28px] border border-stone-200 bg-white/85 p-6 text-sm text-stone-600 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] dark:border-neutral-700 dark:bg-neutral-800/85 dark:text-stone-400">
             Loading order tracking...
           </div>
         </div>
@@ -117,17 +120,18 @@ export default function OrderTracking() {
 
   if (trackingQuery.error && !data.order) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          <div className="rounded-[28px] border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
             <p className="mb-4">{trackingQuery.error}</p>
-            <button
+            <StyledButton
               type="button"
+              variant="primary"
+              size="sm"
               onClick={() => void trackingQuery.refetch()}
-              className="rounded bg-blue-600 px-4 py-2 text-white"
             >
               Retry
-            </button>
+            </StyledButton>
           </div>
         </div>
       </div>
@@ -136,9 +140,9 @@ export default function OrderTracking() {
 
   if (!data.order) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow dark:bg-gray-800 dark:text-gray-300">
+          <div className="rounded-[28px] border border-stone-200 bg-white/85 p-6 text-sm text-stone-600 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] dark:border-neutral-700 dark:bg-neutral-800/85 dark:text-stone-400">
             Order not found.
           </div>
         </div>
@@ -147,8 +151,6 @@ export default function OrderTracking() {
   }
 
   const currentIndex = statusOrder.indexOf(data.order.status);
-  const [cancelling, setCancelling] = useState(false);
-  const pushToast = useToastStore((s) => s.push);
 
   const handleCancelOrder = async () => {
     if (!data.order) return;
@@ -195,17 +197,17 @@ export default function OrderTracking() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="container-app py-8">
         <button
           onClick={() => navigate("/orders")}
-          className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mb-8 flex items-center gap-2 rounded-full px-3 py-2 font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
         >
           <ChevronLeft size={20} />
           Back to Orders
         </button>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-8 shadow dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50">
+        <div className="rounded-[32px] border border-stone-200 bg-white/85 p-8 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] dark:border-neutral-700 dark:bg-neutral-800/85">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">

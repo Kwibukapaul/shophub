@@ -161,7 +161,7 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
     (featuredProducts.length === 0 ? featuredProductsQuery.error : null);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="container-app py-12">
         {pageError && (
           <motion.div
@@ -180,6 +180,27 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
           </motion.div>
         )}
 
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 rounded-[28px] border border-stone-200 bg-white/80 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] backdrop-blur dark:border-neutral-700 dark:bg-neutral-800/80"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-600">
+                Customer home
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-white">
+                Shop thoughtfully, from one calm space
+              </h1>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-stone-600 dark:text-stone-400">
+              Discover the best of our partner stores with curated categories,
+              polished product stories, and a smooth path to checkout.
+            </p>
+          </div>
+        </motion.div>
+
         <div className="flex gap-6">
           {/* Sidebar */}
           <motion.aside
@@ -187,8 +208,11 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
             animate={{ opacity: 1, x: 0 }}
             className="hidden w-64 md:block"
           >
-            <StyledCard variant="default" className="h-full">
-              <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white">
+            <StyledCard
+              variant="default"
+              className="h-full rounded-[24px] border border-stone-200 bg-white/85 p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.35)] dark:border-neutral-700 dark:bg-neutral-800/85"
+            >
+              <h3 className="mb-6 text-lg font-semibold text-stone-900 dark:text-white">
                 Partner Stores
               </h3>
               <nav className="flex-1 space-y-2 mb-8">
@@ -224,8 +248,8 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
                 </motion.div>
               </nav>
 
-              <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-500 mb-2">
+              <div className="mt-auto border-t border-stone-200 pt-4 text-sm text-stone-600 dark:border-neutral-700 dark:text-stone-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-600">
                   Support
                 </p>
                 <p className="break-words">support@shophub.example.com</p>
@@ -322,7 +346,7 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
                   <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Search Products
                   </label>
-                  <div className="flex items-center gap-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary-500 dark:focus-within:ring-primary-400">
+                  <div className="flex items-center gap-3 rounded-full border border-stone-200 bg-white/90 px-4 py-3 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.45)] transition-shadow focus-within:ring-2 focus-within:ring-amber-500 dark:border-neutral-700 dark:bg-neutral-800/90 dark:focus-within:ring-amber-400">
                     <Search
                       size={18}
                       className="text-gray-400 dark:text-gray-500"

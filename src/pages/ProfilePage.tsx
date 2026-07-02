@@ -75,24 +75,29 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
   const profilePreviewUrl = getImagePreviewUrl(profileImageUrl);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="container-app py-8">
         <button
           onClick={() => onNavigate("home")}
-          className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mb-8 inline-flex items-center gap-2 rounded-full px-3 py-2 font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
         >
           <ChevronLeft size={20} />
           Back
         </button>
 
-        <div className="card p-8">
-          <div className="mb-8 flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              My Profile
-            </h1>
+        <div className="rounded-[32px] border border-stone-200 bg-white/85 p-8 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] dark:border-neutral-700 dark:bg-neutral-800/85">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-600">
+                Account
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-white">
+                My Profile
+              </h1>
+            </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+              className="flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-700"
             >
               <Edit2 size={18} />
               {isEditing ? "Cancel" : "Edit"}
@@ -127,8 +132,8 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
             </div>
           )}
 
-          <div className="mb-8 flex items-start gap-6">
-            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-700">
+          <div className="mb-8 flex items-start gap-6 rounded-[24px] border border-stone-200 bg-stone-50/80 p-5 dark:border-neutral-700 dark:bg-neutral-900/30">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-gradient-to-br from-amber-100 to-orange-100 text-amber-700 dark:border-neutral-700 dark:from-amber-900/40 dark:to-orange-900/20 dark:text-amber-300">
               {isOnline && profilePreviewUrl ? (
                 <img
                   src={profilePreviewUrl}
@@ -136,7 +141,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-2xl font-bold text-gray-500 dark:text-gray-300">
+                <span className="text-2xl font-bold">
                   {(fullName || session?.user.email || "U")
                     .charAt(0)
                     .toUpperCase()}
@@ -230,32 +235,32 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
               <button
                 onClick={handleSave}
                 disabled={loading || !isOnline}
-                className="rounded-lg bg-blue-600 px-6 py-2 font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-700 dark:hover:bg-blue-600"
+                className="rounded-full bg-amber-600 px-6 py-2 font-medium text-white transition hover:bg-amber-700 disabled:opacity-50"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
-                className="rounded-lg border border-gray-300 px-6 py-2 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="rounded-full border border-stone-300 px-6 py-2 font-medium text-stone-700 transition hover:bg-stone-50 dark:border-neutral-600 dark:text-stone-300 dark:hover:bg-neutral-700"
               >
                 Discard
               </button>
             </div>
           )}
 
-          <div className="mt-12 border-t border-gray-200 pt-8 dark:border-gray-700">
+          <div className="mt-12 border-t border-neutral-200 pt-8 dark:border-neutral-700">
             <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
               Other Options
             </h2>
             <button
               onClick={() => onNavigate("reviews")}
-              className="mb-2 block w-full rounded-lg px-4 py-3 text-left font-medium text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+              className="mb-2 block w-full rounded-full px-4 py-3 text-left font-medium text-amber-700 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-900/20"
             >
               Write a Review
             </button>
             <button
               onClick={handleLogout}
-              className="block w-full rounded-lg px-4 py-3 text-left font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              className="block w-full rounded-full px-4 py-3 text-left font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
             >
               Sign Out
             </button>

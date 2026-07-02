@@ -24,24 +24,20 @@ export const StyledButton = forwardRef<HTMLButtonElement, StyledButtonProps>(
     },
     ref,
   ) => {
-    // Base styles
     let variantClasses = "";
 
     if (variant === "primary") {
       variantClasses =
-        "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800";
+        "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-[0_16px_35px_-20px_rgba(249,115,22,0.75)] hover:shadow-[0_20px_45px_-18px_rgba(249,115,22,0.85)] hover:-translate-y-0.5";
     } else if (variant === "secondary") {
-      variantClasses =
-        "bg-neutral-200 text-neutral-900 hover:bg-neutral-300 active:bg-neutral-400";
+      variantClasses = "bg-stone-100 text-stone-800 hover:bg-stone-200";
     } else if (variant === "outline") {
       variantClasses =
-        "border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100";
+        "border border-stone-300/80 text-stone-700 hover:bg-stone-50";
     } else if (variant === "ghost") {
-      variantClasses =
-        "text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200";
+      variantClasses = "text-stone-700 hover:bg-stone-100";
     } else if (variant === "danger") {
-      variantClasses =
-        "bg-red-600 text-white hover:bg-red-700 active:bg-red-800";
+      variantClasses = "bg-red-600 text-white hover:bg-red-700";
     }
 
     let sizeClasses = "";
@@ -62,10 +58,10 @@ export const StyledButton = forwardRef<HTMLButtonElement, StyledButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={`
-          inline-flex items-center justify-center font-medium rounded-lg
+          inline-flex items-center justify-center font-medium rounded-full
           transition-all duration-200 ease-out
           disabled:opacity-50 disabled:cursor-not-allowed
-          focus:outline-none focus-ring
+          focus:outline-none
           ${variantClasses}
           ${sizeClasses}
           ${className}

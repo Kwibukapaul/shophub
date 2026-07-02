@@ -1,7 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
+import StyledButton from "../../components/ui/StyledButton";
 
-import { Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User,
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+} from "lucide-react";
 
 interface SignupProps {
   onNavigate: (page: string) => void;
@@ -16,6 +25,7 @@ export default function Signup({ onNavigate }: SignupProps) {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const navigate = useNavigate();
 
   const validatePassword = (pwd: string) => {
     return pwd.length >= 8;
@@ -59,14 +69,23 @@ export default function Signup({ onNavigate }: SignupProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="w-full max-w-md">
-        <div className="card p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="rounded-[32px] border border-stone-200 bg-white/85 p-8 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] backdrop-blur dark:border-neutral-700 dark:bg-neutral-800/85">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
+          >
+            <ChevronLeft size={18} />
+            Back to landing
+          </button>
+
+          <div className="mb-8 text-center">
+            <h1 className="mb-2 text-3xl font-semibold text-stone-900 dark:text-white">
               ShopHub
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-stone-600 dark:text-stone-400">
               Create your account
             </p>
           </div>
@@ -177,17 +196,23 @@ export default function Signup({ onNavigate }: SignupProps) {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn">
+            <StyledButton
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={loading}
+              className="w-full"
+            >
               {loading ? "Creating account..." : "Sign Up"}
-            </button>
+            </StyledButton>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-sm text-stone-600 dark:text-stone-400">
               Already have an account?{" "}
               <button
                 onClick={() => onNavigate("login")}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                className="font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white"
               >
                 Sign in
               </button>

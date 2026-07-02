@@ -34,7 +34,7 @@ export default function ProductGridSection({
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-100px" }}
-      className="mb-12 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 md:p-8 shadow-lg"
+      className="mb-12 rounded-[24px] border-0 bg-transparent p-0 shadow-none"
     >
       {/* Header */}
       <motion.div variants={staggerItemVariants} className="mb-8">

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom"; // 👈 Added Link
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
-import { Mail, Lock, AlertCircle } from "lucide-react";
+import StyledButton from "../../components/ui/StyledButton";
+import { Mail, Lock, AlertCircle, ChevronLeft } from "lucide-react";
 
 export default function Login() {
   const { signInWithPassword, session, role, initialized } = useAuth();
@@ -41,12 +42,21 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md card p-8">
-        <h1 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
+      <div className="w-full max-w-md rounded-[32px] border border-stone-200 bg-white/85 p-8 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] backdrop-blur dark:border-neutral-700 dark:bg-neutral-800/85">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
+        >
+          <ChevronLeft size={18} />
+          Back to landing
+        </button>
+
+        <h1 className="mb-2 text-center text-2xl font-semibold text-stone-900 dark:text-white">
           Welcome Back
         </h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+        <p className="mb-8 text-center text-sm text-stone-600 dark:text-stone-400">
           Sign in to your account
         </p>
 
@@ -107,17 +117,23 @@ export default function Login() {
             </div>
           </div>
 
-          <button disabled={submitting} className="w-full btn">
+          <StyledButton
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={submitting}
+            className="w-full"
+          >
             {submitting ? "Signing in..." : "Sign In"}
-          </button>
+          </StyledButton>
         </form>
 
         {/* 👇 Added Sign Up Link */}
-        <div className="mt-6 text-center text-sm text-slate-600 dark:text-gray-400">
+        <div className="mt-6 text-center text-sm text-stone-600 dark:text-stone-400">
           Don't have an account?{" "}
           <Link
             to="/signup"
-            className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+            className="font-medium text-stone-900 underline-offset-4 hover:underline dark:text-white"
           >
             Sign up
           </Link>

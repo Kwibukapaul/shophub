@@ -136,7 +136,7 @@ export default function LandingPage({
     (featuredProducts.length === 0 ? featuredProductsQuery.error : null);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="container-app py-12">
         {/* Hero Section */}
         <HeroSection
@@ -152,6 +152,8 @@ export default function LandingPage({
             const element = document.getElementById("featured-products");
             element?.scrollIntoView({ behavior: "smooth" });
           }}
+          onSignIn={() => onNavigate("login")}
+          onSignUp={() => onNavigate("signup")}
         />
 
         {pageError && (
@@ -252,10 +254,10 @@ export default function LandingPage({
           <motion.div variants={staggerItemVariants} className="mb-10">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-600 dark:text-amber-400">
                   Shop by Category
                 </p>
-                <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                <h2 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-white md:text-4xl">
                   Explore what fits your needs
                 </h2>
               </div>

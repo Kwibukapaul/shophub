@@ -1,4 +1,4 @@
-import { ChevronLeft, Eye, ShoppingBag } from "lucide-react";
+import { ChevronLeft, Eye, ShoppingBag, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { supabase } from "../lib/supabase";
@@ -69,28 +69,31 @@ export default function OrderHistory() {
   const orders = ordersQuery.data || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_45%),linear-gradient(180deg,_#faf7f2_0%,_#f5efe7_100%)] dark:bg-gray-900">
       <div className="container-app py-8">
         <button
           onClick={() => navigate("/")}
-          className="mb-8 flex items-center gap-2 font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mb-8 inline-flex items-center gap-2 rounded-full px-3 py-2 font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
         >
           <ChevronLeft size={20} />
           Back
         </button>
 
-        <div className="mb-8 flex items-center justify-between gap-4">
+        <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-stone-200 bg-white/80 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] md:flex-row md:items-end md:justify-between dark:border-neutral-700 dark:bg-neutral-800/80">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-600">
+              Orders
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold text-stone-900 dark:text-white">
               Order History
             </h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">
               Track active orders, review ordered items, and keep shopping while
               your deliveries move forward.
             </p>
           </div>
           {ordersQuery.isFetching && orders.length > 0 && (
-            <span className="text-sm text-gray-500">Refreshing...</span>
+            <span className="text-sm text-stone-500">Refreshing...</span>
           )}
         </div>
 
@@ -108,12 +111,15 @@ export default function OrderHistory() {
         )}
 
         {ordersQuery.isLoading && orders.length === 0 ? (
-          <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow dark:bg-gray-800 dark:text-gray-300">
+          <div className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-gray-500 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-300">
             Loading your orders...
           </div>
         ) : orders.length === 0 ? (
-          <div className="rounded-lg bg-white p-6 text-sm text-gray-500 shadow dark:bg-gray-800 dark:text-gray-300">
-            You have not placed any orders yet.
+          <div className="rounded-lg border border-neutral-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-300">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+              <Package size={20} />
+            </div>
+            <p>You have not placed any orders yet.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -126,7 +132,7 @@ export default function OrderHistory() {
               return (
                 <div
                   key={order.id}
-                  className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800 dark:shadow-gray-900/50"
+                  className="rounded-[24px] border border-stone-200 bg-white/90 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:shadow-[0_24px_80px_-30px_rgba(15,23,42,0.45)] dark:border-neutral-700 dark:bg-neutral-800/90"
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -177,7 +183,7 @@ export default function OrderHistory() {
                     </div>
                   </div>
 
-                  <div className="mt-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-900/30">
+                  <div className="mt-6 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900/30">
                     <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                       <ShoppingBag size={16} />
                       Ordered Items
@@ -207,14 +213,14 @@ export default function OrderHistory() {
                   <div className="mt-6 flex flex-wrap gap-3">
                     <button
                       onClick={() => navigate(`/orders/${order.id}#progress`)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+                      className="inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
                     >
                       <Eye size={18} />
                       Track Order
                     </button>
                     <button
                       onClick={() => navigate("/")}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 dark:border-neutral-600 dark:text-stone-300 dark:hover:bg-neutral-700"
                     >
                       Continue Shopping
                     </button>

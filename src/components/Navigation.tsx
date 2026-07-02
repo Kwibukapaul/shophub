@@ -94,21 +94,23 @@ export default function Navigation({ userProfile }: NavigationProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-sm dark:bg-gray-900">
-      <div className="container-app flex h-16 items-center justify-between">
+    <nav className="sticky top-0 z-50 border-b border-neutral-200/70 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90">
+      <div className="container-app flex h-16 items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-white"
+            className="flex items-center gap-3 rounded-full px-2 py-1 text-lg font-semibold text-slate-900 transition hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-800"
           >
-            <Package className="text-brand" size={22} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
+              <Package size={18} />
+            </div>
             <span>ShopHub</span>
           </button>
 
-          <div className="hidden md:flex md:items-center md:gap-6">
+          <div className="hidden md:flex md:items-center md:gap-2">
             <button
               onClick={() => navigate("/")}
-              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-neutral-100 hover:text-primary-600 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-primary-400"
             >
               Home
             </button>
@@ -116,7 +118,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
             <div className="relative group">
               <button
                 onClick={() => setCatOpen((open) => !open)}
-                className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-neutral-100 hover:text-primary-600 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-primary-400"
               >
                 Categories
                 <ChevronDown
@@ -210,10 +212,10 @@ export default function Navigation({ userProfile }: NavigationProps) {
             <div className="relative">
               <input
                 placeholder="Search products..."
-                className="rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none"
+                className="w-56 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 pl-10 text-sm shadow-sm outline-none transition focus:border-primary-500 focus:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:focus:bg-neutral-900"
               />
               <Search
-                className="absolute right-2 top-2 text-slate-500"
+                className="absolute left-3 top-2.5 text-slate-500"
                 size={16}
               />
             </div>
@@ -222,7 +224,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
           <button
             onClick={() => navigate("/cart")}
             aria-label="cart"
-            className="relative p-2 rounded-md hover:bg-slate-50 dark:hover:bg-gray-800"
+            className="relative rounded-full p-2.5 transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <ShoppingCart />
             {itemCount > 0 && (
@@ -235,7 +237,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
           {latestOrder && (
             <button
               onClick={() => navigate(`/orders/${latestOrder.id}`)}
-              className="hidden items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold dark:bg-gray-800 md:flex"
+              className="hidden items-center gap-2 rounded-full bg-primary-50 px-3 py-1.5 text-sm font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 md:flex"
               title={`Latest order ${latestOrder.order_number}`}
             >
               <Package size={14} />
@@ -251,7 +253,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
               <button
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-label="menu"
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                className="rounded-full p-2.5 transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
                 <MoreHorizontal />
               </button>

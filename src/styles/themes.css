@@ -1,4 +1,43 @@
 /* Theme overrides and dark mode */
+html:not(.dark) {
+  --text-primary: #111111;
+  --text-secondary: #111111;
+  --text-tertiary: #111111;
+  --text-inverse: #ffffff;
+}
+
+html:not(.dark) body,
+html:not(.dark) body p,
+html:not(.dark) body span,
+html:not(.dark) body h1,
+html:not(.dark) body h2,
+html:not(.dark) body h3,
+html:not(.dark) body h4,
+html:not(.dark) body h5,
+html:not(.dark) body h6,
+html:not(.dark) body li,
+html:not(.dark) body label,
+html:not(.dark) body a {
+  color: #111111;
+}
+
+html:not(.dark) svg {
+  color: #111111 !important;
+}
+
+html:not(.dark) .text-stone-600,
+html:not(.dark) .text-stone-500,
+html:not(.dark) .text-stone-400,
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-gray-300,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-neutral-400,
+html:not(.dark) .text-neutral-500 {
+  color: #111111 !important;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;

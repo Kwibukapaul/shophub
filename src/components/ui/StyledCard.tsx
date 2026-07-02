@@ -11,20 +11,20 @@ export const StyledCard = forwardRef<HTMLDivElement, StyledCardProps>(
 
     if (variant === "default") {
       variantClasses =
-        "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm";
+        "bg-white/95 dark:bg-neutral-800/90 border border-stone-200/80 dark:border-neutral-700 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)]";
     } else if (variant === "interactive") {
       variantClasses =
-        "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm cursor-pointer transition-all duration-300";
+        "bg-white/95 dark:bg-neutral-800/90 border border-stone-200/80 dark:border-neutral-700 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] cursor-pointer transition-all duration-300";
     } else if (variant === "hover") {
       variantClasses =
-        "bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300";
+        "bg-white/95 dark:bg-neutral-800/90 border border-stone-200/80 dark:border-neutral-700 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] hover:shadow-[0_30px_80px_-30px_rgba(15,23,42,0.45)] hover:-translate-y-1 transition-all duration-300";
     }
 
     return (
       <div
         ref={ref}
         className={`
-          rounded-lg p-4 md:p-6
+          rounded-[24px] p-4 md:p-6
           ${variantClasses}
           ${className}
         `}
