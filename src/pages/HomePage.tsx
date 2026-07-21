@@ -19,6 +19,11 @@ interface HomePageProps {
   setCategorySlug: (slug: string) => void;
 }
 
+interface PartnerStoreSummary {
+  id: string;
+  name: string;
+}
+
 export default function HomePage({ setCategorySlug }: HomePageProps) {
   const isOnline = useOnlineStatus();
 
@@ -54,7 +59,7 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
     },
   });
 
-  const partnerStoresQuery = usePersistentQuery<any[]>({
+  const partnerStoresQuery = usePersistentQuery<PartnerStoreSummary[]>({
     queryKey: "homepage-partner-stores",
     staleTimeMs: 5 * 60 * 1000,
     fallbackError: "Unable to load partner stores.",
@@ -119,6 +124,11 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
   });
 
   const categories = categoriesQuery.data || [];
+  const visibleCategories = categories.filter(
+    (category) =>
+      String(category.slug || "").toLowerCase() !== "fashion" &&
+      String(category.name || "").toLowerCase() !== "fashion",
+  );
   const partnerStores = partnerStoresQuery.data || [];
   const featuredProducts = featuredProductsQuery.data || [];
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
@@ -299,7 +309,7 @@ export default function HomePage({ setCategorySlug }: HomePageProps) {
                   animate="visible"
                   className="grid gap-6 md:grid-cols-2"
                 >
-                  {categories.map((category, idx) => (
+                  {visibleCategories.map((category, idx) => (
                     <motion.div
                       key={category.id}
                       variants={staggerItemVariants}

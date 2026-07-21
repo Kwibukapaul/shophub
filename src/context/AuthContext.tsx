@@ -3,6 +3,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { offlineMessage } from "../lib/errorHandling";
 import withTimeout from "../lib/withTimeout";
+import { derivePermissions } from "../lib/roles";
 
 interface ProfileUpdates {
   full_name?: string;
@@ -30,9 +31,22 @@ interface AuthContextType {
   loading: boolean;
   initialized: boolean;
   role: Role;
+  permissions: ReturnType<typeof derivePermissions> | null;
   isAdmin: boolean;
   isStoreManager: boolean;
   storeId: string | null;
+  // new API
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+
+  // backwards compat
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -81,6 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile: any | null;
     role: Role;
     storeId: string | null;
+    permissions: ReturnType<typeof derivePermissions> | null;
   }>({
     loading: true,
     initialized: false,
@@ -89,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile: null,
     role: null,
     storeId: null,
+    permissions: null,
   });
 
   const buildPatchedAuthUser = (currentUser: any, profile: ProfileUpdates) => {
@@ -240,56 +256,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const currentSession = data?.session ?? null;
 
+        // If no session, we're done initializing (public view)
+        if (!currentSession) {
+          setStateSafe({
+            session: null,
+            user: null,
+            loading: false,
+            initialized: true,
+          });
+          if (process.env.NODE_ENV === "development")
+            console.debug("No session");
+          return;
+        }
+
+        // session exists -> we must fetch profile and role before initialized=true
         setStateSafe({
           session: currentSession,
-          user: currentSession?.user ?? null,
+          user: currentSession.user,
+          loading: true,
+          initialized: false,
         });
 
-        // Mark initialized and allow app to render immediately
-        setStateSafe({ loading: false, initialized: true });
-
         if (process.env.NODE_ENV === "development")
-          console.debug("Session Restored");
+          console.debug("Session Restored — fetching profile");
 
-        // Background fetch profile and roles
-        if (currentSession?.user) {
-          const userId = currentSession.user.id;
-          try {
-            const [isAdminRes, storeRes, profileData] = await Promise.all([
-              withTimeout(checkAdmin(userId), 3000).catch(() => false),
-              withTimeout(checkStoreManager(userId), 3000).catch(() => ({
-                isManager: false,
-                storeId: null,
-              })),
-              withTimeout(
-                fetchUserProfile(userId, currentSession.user),
-                5000,
-              ).catch(() => null),
-            ]);
+        const userId = currentSession.user.id;
+        try {
+          const [isAdminRes, storeRes, profileData] = await Promise.all([
+            withTimeout(checkAdmin(userId), 3000).catch(() => false),
+            withTimeout(checkStoreManager(userId), 3000).catch(() => ({
+              isManager: false,
+              storeId: null,
+            })),
+            withTimeout(
+              fetchUserProfile(userId, currentSession.user),
+              5000,
+            ).catch(() => null),
+          ]);
 
-            if (!mounted) return;
+          if (!mounted) return;
 
-            const role: Role = isAdminRes
-              ? "admin"
-              : storeRes?.isManager
-                ? "store_manager"
-                : "user";
+          const role: Role = isAdminRes
+            ? "admin"
+            : storeRes?.isManager
+              ? "store_manager"
+              : "customer";
+          const permissions = derivePermissions(role);
 
-            setStateSafe({
-              profile: profileData ?? null,
-              role,
-              storeId: storeRes?.storeId ?? null,
-            });
+          setStateSafe({
+            profile: profileData ?? null,
+            role,
+            storeId: storeRes?.storeId ?? null,
+            permissions,
+            loading: false,
+            initialized: true,
+          });
 
-            if (process.env.NODE_ENV === "development")
-              console.debug("Profile Loaded", { profileData, role });
+          if (process.env.NODE_ENV === "development")
+            console.debug("Profile Loaded", { profileData, role });
 
-            if (profileData && profileData.is_active === false) {
-              await supabase.auth.signOut({ scope: "local" });
-            }
-          } catch (err) {
-            console.error("Background profile/role load failed:", err);
+          if (profileData && profileData.is_active === false) {
+            await supabase.auth.signOut({ scope: "local" });
           }
+        } catch (err) {
+          console.error("Background profile/role load failed:", err);
+          setStateSafe({ loading: false, initialized: true });
         }
       } catch (err) {
         console.error("Auth init failed:", err);
@@ -332,54 +363,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         try {
           const sessionVal = nextSession ?? null;
-          setStateSafe({ session: sessionVal, user: sessionVal?.user ?? null });
 
-          // background load
-          if (sessionVal?.user) {
-            const userId = sessionVal.user.id;
-            try {
-              const [isAdminRes, storeRes, profileData] = await Promise.all([
-                withTimeout(checkAdmin(userId), 3000).catch(() => false),
-                withTimeout(checkStoreManager(userId), 3000).catch(() => ({
-                  isManager: false,
-                  storeId: null,
-                })),
-                withTimeout(
-                  fetchUserProfile(userId, sessionVal.user),
-                  5000,
-                ).catch(() => null),
-              ]);
-
-              if (!mounted) return;
-
-              const role: Role = isAdminRes
-                ? "admin"
-                : storeRes?.isManager
-                  ? "store_manager"
-                  : "user";
-
-              setStateSafe({
-                profile: profileData ?? null,
-                role,
-                storeId: storeRes?.storeId ?? null,
-                loading: false,
-                initialized: true,
-              });
-
-              if (profileData && profileData.is_active === false) {
-                await supabase.auth.signOut({ scope: "local" });
-              }
-            } catch (err) {
-              console.error("Auth listener helper error:", err);
-            }
-          } else {
+          // No session -> public view
+          if (!sessionVal) {
             setStateSafe({
+              session: null,
+              user: null,
               profile: null,
               role: null,
               storeId: null,
+              permissions: null,
               loading: false,
               initialized: true,
             });
+            return;
+          }
+
+          // session exists -> fetch profile+role before marking initialized
+          setStateSafe({
+            session: sessionVal,
+            user: sessionVal.user,
+            loading: true,
+            initialized: false,
+          });
+
+          try {
+            const userId = sessionVal.user.id;
+            const [isAdminRes, storeRes, profileData] = await Promise.all([
+              withTimeout(checkAdmin(userId), 3000).catch(() => false),
+              withTimeout(checkStoreManager(userId), 3000).catch(() => ({
+                isManager: false,
+                storeId: null,
+              })),
+              withTimeout(
+                fetchUserProfile(userId, sessionVal.user),
+                5000,
+              ).catch(() => null),
+            ]);
+
+            if (!mounted) return;
+
+            const role: Role = isAdminRes
+              ? "admin"
+              : storeRes?.isManager
+                ? "store_manager"
+                : "customer";
+            const permissions = derivePermissions(role);
+
+            setStateSafe({
+              profile: profileData ?? null,
+              role,
+              storeId: storeRes?.storeId ?? null,
+              permissions,
+              loading: false,
+              initialized: true,
+            });
+
+            if (profileData && profileData.is_active === false) {
+              await supabase.auth.signOut({ scope: "local" });
+            }
+          } catch (err) {
+            console.error("Auth state listener failed:", err);
+            setStateSafe({ loading: false, initialized: true });
           }
         } catch (error) {
           console.error("Auth state handler failed:", error);
@@ -442,6 +487,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error) {
       throw error;
+    }
+  };
+
+  // New API: login/register/logout + google sign-in and refresh
+  const login = signInWithPassword;
+
+  const register = signUp;
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+    if (error) throw error;
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut({ scope: "local" });
+    setAuthState({
+      loading: false,
+      initialized: true,
+      user: null,
+      session: null,
+      profile: null,
+      role: null,
+      storeId: null,
+      permissions: null,
+    });
+  };
+
+  const refreshProfile = async () => {
+    const user = authState.user;
+    if (!user?.id) return;
+    try {
+      const profileData = await fetchUserProfile(user.id, user);
+      const isAdminRes = await checkAdmin(user.id);
+      const storeRes = await checkStoreManager(user.id);
+      const role: Role = isAdminRes
+        ? "admin"
+        : storeRes?.isManager
+          ? "store_manager"
+          : "customer";
+      const permissions = derivePermissions(role);
+      setAuthState((prev) => ({
+        ...prev,
+        profile: profileData ?? null,
+        role,
+        storeId: storeRes?.storeId ?? null,
+        permissions,
+      }));
+    } catch (err) {
+      console.error("refreshProfile failed:", err);
     }
   };
 
@@ -542,9 +638,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading: authState.loading,
         initialized: authState.initialized,
         role: authState.role,
+        permissions: authState.permissions,
         isAdmin: derivedIsAdmin,
         isStoreManager: derivedIsStoreManager,
         storeId: authState.storeId,
+        // New API
+        login,
+        register,
+        signInWithGoogle,
+        logout,
+        refreshProfile,
+
+        // Backwards compat
         signInWithPassword,
         signUp,
         signOut,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
+import { getDashboardForRole } from "../../lib/roles";
 import StyledButton from "../../components/ui/StyledButton";
 import { Mail, Lock, AlertCircle, ChevronLeft } from "lucide-react";
 
@@ -16,13 +17,7 @@ export default function Login() {
   // 🔁 Redirect AFTER role is known
   useEffect(() => {
     if (initialized && session) {
-      if (role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (role === "store_manager") {
-        navigate("/store-manager", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      navigate(getDashboardForRole(role), { replace: true });
     }
   }, [session, role, initialized, navigate]);
 

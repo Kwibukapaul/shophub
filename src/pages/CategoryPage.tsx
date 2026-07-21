@@ -14,6 +14,12 @@ export default function CategoryPage() {
   const { slug = "electronics" } = useParams();
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
+  const normalizedSlug = slug.toLowerCase();
+
+  if (normalizedSlug === "fashion") {
+    return <div className="p-8">Category not found.</div>;
+  }
+
   const categoryQuery = usePersistentQuery<CategoryData>({
     queryKey: `category-page:${slug}`,
     staleTimeMs: 60 * 1000,

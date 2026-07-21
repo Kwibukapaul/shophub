@@ -94,6 +94,11 @@ export default function LandingPage({
   });
 
   const categories = categoriesQuery.data || [];
+  const visibleCategories = categories.filter(
+    (category) =>
+      String(category.slug || "").toLowerCase() !== "fashion" &&
+      String(category.name || "").toLowerCase() !== "fashion",
+  );
   const featuredProducts = featuredProductsQuery.data || [];
 
   const benefits = [
@@ -295,7 +300,7 @@ export default function LandingPage({
               animate="visible"
               className="grid gap-6 md:grid-cols-2"
             >
-              {categories.map((category, idx) => (
+              {visibleCategories.map((category, idx) => (
                 <motion.div
                   key={category.id}
                   variants={staggerItemVariants}

@@ -13,7 +13,9 @@ export default function Contact() {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-600 dark:text-stone-400">
             Whether you need help with an order, a partnership inquiry, or
-            product guidance, our team is here to help.
+            product guidance, our team is here to help. We prioritise fast
+            responses during business hours and provide clear guidance for
+            delivery, pickup and payments.
           </p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -22,17 +24,17 @@ export default function Contact() {
                 Get in touch
               </h2>
               <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
-                For support or business inquiries, email us at{" "}
-                <strong>support@shophub.example.com</strong> or call{" "}
-                <strong>+250 788 123 456</strong>.
+                For general support, email{" "}
+                <strong>support@shophub.example.com</strong>. For urgent order
+                issues call <strong>+250 788 243 550</strong>.
               </p>
 
               <div className="mt-4 space-y-3 text-sm text-stone-600 dark:text-stone-300">
                 <div className="flex items-center gap-2">
-                  <MapPin size={16} /> 123 Market Street, Kigali, Rwanda
+                  <MapPin size={16} /> Kigali, Rwanda
                 </div>
                 <div className="flex items-center gap-2">
-                  <Phone size={16} /> +250 788 123 456
+                  <Phone size={16} /> +250 788 243 550
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail size={16} /> support@shophub.example.com
@@ -45,10 +47,20 @@ export default function Contact() {
                 Business & Partnerships
               </h2>
               <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
-                Interested in partnering with us? Contact our partnerships team
-                at <strong>partners@shophub.example.com</strong>. We typically
-                respond within 2 business days.
+                Interested in partnering? Email{" "}
+                <strong>partners@shophub.example.com</strong> with a short
+                description of your store and product catalogue. We aim to
+                respond within 2 business days and will guide you through our
+                onboarding process.
               </p>
+
+              <div className="mt-4 text-sm text-stone-600 dark:text-stone-300">
+                <p>
+                  Owners: <strong>IGIRUBUNTU Eddy Gershom</strong> &amp;{" "}
+                  <strong>NIYIKIZA Theonest</strong> — for strategic or media
+                  inquiries contact <strong>owners@shophub.example.com</strong>.
+                </p>
+              </div>
             </div>
           </div>
         </div>

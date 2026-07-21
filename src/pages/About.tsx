@@ -11,38 +11,68 @@ export default function About() {
           </h1>
 
           <p className="mt-4 text-base leading-8 text-stone-700 dark:text-stone-300">
-            ShopHub is a marketplace built to connect customers with quality
-            partner stores across electronics, fashion, and home goods. Our
-            mission is to make shopping simple, reliable, and locally relevant.
+            ShopHub is a hybrid e-commerce platform built to connect Kigali
+            customers with quality products from both the Platform's own
+            inventory and carefully selected partner stores. We launched with a
+            focus on electronics and accessories and will expand into new
+            categories such as Made-in-Rwanda items and fashion as demand grows.
           </p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <div className="rounded-[24px] border border-stone-200 bg-stone-50/80 p-6 dark:border-neutral-700 dark:bg-neutral-900/30">
               <h2 className="mb-2 font-semibold text-stone-900 dark:text-white">
-                Our Story
+                Vision & Mission
               </h2>
               <p className="text-sm leading-7 text-stone-700 dark:text-stone-300">
-                Founded by three entrepreneurs, ShopHub started as a small idea
-                to bring curated products online with a strong partner network.
-                We focus on trust, transparency, and good service.
+                <strong>Vision:</strong> Become a leading digital commerce
+                platform that connects people with quality products and trusted
+                retailers.
+              </p>
+              <p className="mt-2 text-sm leading-7 text-stone-700 dark:text-stone-300">
+                <strong>Mission:</strong> Provide a seamless, reliable, and
+                accessible shopping experience that empowers customers and
+                supports local businesses.
               </p>
             </div>
+
             <div className="rounded-[24px] border border-stone-200 bg-stone-50/80 p-6 dark:border-neutral-700 dark:bg-neutral-900/30">
               <h2 className="mb-2 font-semibold text-stone-900 dark:text-white">
-                Founders
+                Founders & Owners
               </h2>
               <ul className="space-y-2 text-sm text-stone-700 dark:text-stone-300">
                 <li>
-                  <strong>Alex Johnson</strong> — CEO
+                  <strong>IGIRUBUNTU Eddy Gershom</strong> — Co-owner
                 </li>
                 <li>
-                  <strong>Priya Singh</strong> — COO
-                </li>
-                <li>
-                  <strong>Daniel Mwangi</strong> — CTO
+                  <strong>NIYIKIZA Theonest</strong> — Co-owner
                 </li>
               </ul>
             </div>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="mb-2 font-semibold text-stone-900 dark:text-white">
+              What we do
+            </h2>
+            <ul className="list-inside list-disc space-y-2 text-sm text-stone-700 dark:text-stone-300">
+              <li>
+                Unify Platform and partner inventories into a single catalog.
+              </li>
+              <li>
+                Offer local payment methods (Mobile Money / MoMo) and delivery
+                or pickup options within Kigali.
+              </li>
+              <li>
+                Provide an internal dashboard for product, order and partner
+                management.
+              </li>
+            </ul>
+
+            <p className="mt-4 text-sm text-stone-600 dark:text-stone-400">
+              Pilot timeline: Dec 12, 2025 — Feb 1, 2026. Our initial goals are
+              to validate customer adoption, process orders reliably, and
+              onboard partner stores with strong operational workflows.
+            </p>
           </div>
         </div>
       </div>

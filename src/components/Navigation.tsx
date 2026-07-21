@@ -1,5 +1,6 @@
 import {
   ShoppingCart,
+  ShoppingBag,
   User,
   LogOut,
   Moon,
@@ -13,16 +14,22 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { getDashboardForRole } from "../lib/roles";
 import { useTheme } from "../context/ThemeContext";
+import { Category } from "../types";
 import { UserProfile, supabase } from "../lib/supabase";
 import { useEffect, useState } from "react";
 import { usePersistentQuery } from "../hooks/usePersistentQuery";
 import { getOrderProgressPercent } from "../lib/orderProgress";
 import { useCartStore } from "../stores/useCartStore";
-import Badge from "./ui/Badge";
 import StyledButton from "./ui/StyledButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { dropdownVariants } from "../lib/animationPresets";
+
+type NavigationOrderPreview = Pick<
+  import("../types").Order,
+  "id" | "order_number" | "status"
+>;
 
 interface NavigationProps {
   userProfile?: UserProfile | null;
@@ -30,7 +37,7 @@ interface NavigationProps {
 
 export default function Navigation({ userProfile }: NavigationProps) {
   const navigate = useNavigate();
-  const { session, signOut } = useAuth();
+  const { session, logout, signOut, role } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const itemCount = useCartStore((state) => state.itemCount);
   const syncCartCount = useCartStore((state) => state.syncCartCount);
@@ -38,7 +45,9 @@ export default function Navigation({ userProfile }: NavigationProps) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
-  const categoriesQuery = usePersistentQuery<any[]>({
+  const navLinkClass =
+    "rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-neutral-100 hover:text-primary-600 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-primary-400";
+  const categoriesQuery = usePersistentQuery<Category[]>({
     queryKey: "navigation-categories",
     staleTimeMs: 5 * 60 * 1000,
     fallbackError: "Unable to load categories.",
@@ -57,8 +66,13 @@ export default function Navigation({ userProfile }: NavigationProps) {
     },
   });
   const categories = categoriesQuery.data || [];
+  const visibleCategories = categories.filter(
+    (category) =>
+      String(category.slug || "").toLowerCase() !== "fashion" &&
+      String(category.name || "").toLowerCase() !== "fashion",
+  );
 
-  const latestOrderQuery = usePersistentQuery<any | null>({
+  const latestOrderQuery = usePersistentQuery<NavigationOrderPreview | null>({
     queryKey: `navigation-latest-order:${session?.user.id || "guest"}`,
     enabled: Boolean(session?.user.id),
     staleTimeMs: 30 * 1000,
@@ -89,8 +103,17 @@ export default function Navigation({ userProfile }: NavigationProps) {
   }, [clearCart, session?.user.id, syncCartCount]);
 
   const handleLogout = async () => {
-    await signOut();
+    await (logout || signOut)();
     navigate("/");
+  };
+
+  const handleGetDelivery = () => {
+    const supplierPhone = "+250788243550";
+    const whatsappUrl = `https://wa.me/${supplierPhone.replace(/[^0-9]/g, "")}`;
+
+    if (typeof window !== "undefined") {
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (
@@ -102,23 +125,29 @@ export default function Navigation({ userProfile }: NavigationProps) {
             className="flex items-center gap-3 rounded-full px-2 py-1 text-lg font-semibold text-slate-900 transition hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-800"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
-              <Package size={18} />
+              <Package size={18} className="text-white" />
             </div>
             <span>ShopHub</span>
           </button>
 
           <div className="hidden md:flex md:items-center md:gap-2">
-            <button
-              onClick={() => navigate("/")}
-              className="rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-neutral-100 hover:text-primary-600 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-primary-400"
-            >
+            <button onClick={() => navigate("/")} className={navLinkClass}>
               Home
             </button>
+
+            {session && (role === "admin" || role === "store_manager") && (
+              <button
+                onClick={() => navigate(getDashboardForRole(role))}
+                className={`${navLinkClass} bg-primary-50 text-primary-700 dark:bg-primary-900/10 dark:text-primary-300`}
+              >
+                Back to dashboard
+              </button>
+            )}
 
             <div className="relative group">
               <button
                 onClick={() => setCatOpen((open) => !open)}
-                className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-neutral-100 hover:text-primary-600 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-primary-400"
+                className={`flex items-center gap-1 ${navLinkClass}`}
               >
                 Categories
                 <ChevronDown
@@ -136,21 +165,23 @@ export default function Navigation({ userProfile }: NavigationProps) {
                     className="absolute left-0 mt-2 w-72 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
                   >
                     <div className="p-4">
-                      {categories.length === 0 && categoriesQuery.isLoading && (
-                        <p className="px-3 py-2 text-sm text-gray-500">
-                          Loading categories...
-                        </p>
-                      )}
-                      {categories.length === 0 && categoriesQuery.error && (
-                        <button
-                          onClick={() => void categoriesQuery.refetch()}
-                          className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
-                        >
-                          Retry categories
-                        </button>
-                      )}
+                      {visibleCategories.length === 0 &&
+                        categoriesQuery.isLoading && (
+                          <p className="px-3 py-2 text-sm text-gray-500">
+                            Loading categories...
+                          </p>
+                        )}
+                      {visibleCategories.length === 0 &&
+                        categoriesQuery.error && (
+                          <button
+                            onClick={() => void categoriesQuery.refetch()}
+                            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition"
+                          >
+                            Retry categories
+                          </button>
+                        )}
                       <div className="space-y-1">
-                        {categories.map((category, idx) => (
+                        {visibleCategories.map((category, idx) => (
                           <motion.button
                             key={category.id}
                             initial={{ opacity: 0, x: -10 }}
@@ -172,10 +203,6 @@ export default function Navigation({ userProfile }: NavigationProps) {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.15 }}
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge color="blue">Electronics</Badge>
-                          <Badge color="pink">Fashion</Badge>
-                        </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           Quick access to featured categories
                         </p>
@@ -188,20 +215,14 @@ export default function Navigation({ userProfile }: NavigationProps) {
 
             <button
               onClick={() => navigate("/contact")}
-              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className={navLinkClass}
             >
               Contact
             </button>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            >
-              Dashboard
+            <button onClick={handleGetDelivery} className={navLinkClass}>
+              Get Delivery
             </button>
-            <button
-              onClick={() => navigate("/about")}
-              className="text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            >
+            <button onClick={() => navigate("/about")} className={navLinkClass}>
               About
             </button>
           </div>
@@ -240,7 +261,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
               className="hidden items-center gap-2 rounded-full bg-primary-50 px-3 py-1.5 text-sm font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 md:flex"
               title={`Latest order ${latestOrder.order_number}`}
             >
-              <Package size={14} />
+              <ShoppingBag size={14} />
               <span>{latestOrder.order_number}</span>
               <span className="ml-2 text-xs font-medium text-slate-600 dark:text-slate-300">
                 {Math.round(getOrderProgressPercent(latestOrder.status))}%
@@ -291,12 +312,22 @@ export default function Navigation({ userProfile }: NavigationProps) {
 
                       <button
                         onClick={() => {
+                          handleGetDelivery();
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
+                      >
+                        <ShoppingBag size={16} /> Get Delivery
+                      </button>
+
+                      <button
+                        onClick={() => {
                           navigate("/orders");
                           setMenuOpen(false);
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition"
                       >
-                        <Package size={16} /> Orders
+                        <ShoppingBag size={16} /> Orders
                       </button>
 
                       <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
@@ -353,6 +384,100 @@ export default function Navigation({ userProfile }: NavigationProps) {
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="md:hidden border-t border-neutral-200/70 bg-white/95 dark:bg-neutral-900/95 dark:border-neutral-800 z-40"
+          >
+            <div className="container-app py-3">
+              <div className="space-y-3">
+                <div>
+                  <input
+                    placeholder="Search products..."
+                    className="w-full rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm shadow-sm outline-none transition focus:border-primary-500 focus:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:focus:bg-neutral-900"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      navigate("/");
+                      setMenuOpen(false);
+                    }}
+                    className="text-left rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800"
+                  >
+                    Home
+                  </button>
+
+                  <div>
+                    <button
+                      onClick={() => setCatOpen((s) => !s)}
+                      className="w-full text-left rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800 flex items-center justify-between"
+                    >
+                      Categories
+                      <ChevronDown
+                        size={16}
+                        className={`${catOpen ? "rotate-180" : ""} transition-transform`}
+                      />
+                    </button>
+
+                    {catOpen && (
+                      <div className="mt-1 space-y-1 pl-3">
+                        {visibleCategories.map((category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => {
+                              navigate(`/category/${category.slug}`);
+                              setMenuOpen(false);
+                              setCatOpen(false);
+                            }}
+                            className="block w-full text-left rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800"
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      navigate("/contact");
+                      setMenuOpen(false);
+                    }}
+                    className="text-left rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800"
+                  >
+                    Contact
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleGetDelivery();
+                      setMenuOpen(false);
+                    }}
+                    className="text-left rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800"
+                  >
+                    Get Delivery
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigate("/about");
+                      setMenuOpen(false);
+                    }}
+                    className="text-left rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-neutral-100 dark:text-slate-300 dark:hover:bg-neutral-800"
+                  >
+                    About
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

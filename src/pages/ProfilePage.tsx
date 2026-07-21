@@ -10,7 +10,7 @@ interface ProfilePageProps {
 }
 
 export default function ProfilePage({ onNavigate }: ProfilePageProps) {
-  const { session, userProfile, updateProfile, signOut } = useAuth();
+  const { session, userProfile, updateProfile, logout, signOut } = useAuth();
   const isOnline = useOnlineStatus();
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(userProfile?.full_name || "");
@@ -65,7 +65,7 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await (logout || signOut)();
       onNavigate("home");
     } catch (error) {
       console.error("Error signing out:", error);

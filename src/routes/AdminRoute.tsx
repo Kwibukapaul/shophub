@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { getDashboardForRole } from "../lib/roles";
 
 export default function AdminRoute({ children }: { children: JSX.Element }) {
   const { user, role, initialized } = useAuth();
@@ -8,7 +9,8 @@ export default function AdminRoute({ children }: { children: JSX.Element }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (role !== "admin") return <Navigate to="/" replace />;
+  if (role !== "admin")
+    return <Navigate to={getDashboardForRole(role)} replace />;
 
   return children;
 }

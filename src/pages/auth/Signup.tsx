@@ -24,7 +24,7 @@ export default function Signup({ onNavigate }: SignupProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, register } = useAuth();
   const navigate = useNavigate();
 
   const validatePassword = (pwd: string) => {
@@ -56,7 +56,7 @@ export default function Signup({ onNavigate }: SignupProps) {
     }
 
     try {
-      await signUp(email, password, fullName);
+      await (register || signUp)(email, password, fullName);
       setSuccess(true);
       setTimeout(() => {
         onNavigate("login");

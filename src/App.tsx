@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
 import { useAuth } from "./context/useAuth";
+import { getDashboardForRole } from "./lib/roles";
 import { useTheme } from "./context/ThemeContext";
 
 import Navigation from "./components/Navigation";
@@ -33,7 +34,7 @@ import About from "./pages/About";
 import Footer from "./components/Footer";
 
 function App() {
-  const { session, role, storeId, signOut, userProfile } = useAuth();
+  const { session, role, storeId, logout, signOut, userProfile } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -80,7 +81,7 @@ function App() {
               "admin-layout",
               <AdminLayout
                 onLogout={async () => {
-                  await signOut();
+                  await (logout || signOut)();
                   navigate("/");
                 }}
                 userProfile={userProfile}
@@ -103,7 +104,7 @@ function App() {
               "store-manager-layout",
               <StoreManagerLayout
                 onLogout={async () => {
-                  await signOut();
+                  await (logout || signOut)();
                   navigate("/");
                 }}
                 userProfile={userProfile}

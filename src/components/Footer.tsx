@@ -51,8 +51,8 @@ export default function Footer() {
             ShopHub
           </h4>
           <p className="text-sm mt-3 text-gray-600 dark:text-gray-400 leading-relaxed">
-            Making ethical, high-quality shopping accessible while connecting
-            people and partner stores.
+            A clean marketplace experience that connects shoppers with trusted
+            partner stores.
           </p>
 
           {/* Social Links */}
@@ -106,10 +106,7 @@ export default function Footer() {
             Featured Categories
           </h5>
           <div className="space-y-2.5">
-            {[
-              { name: "Electronics", path: "electronics" },
-              { name: "Fashion", path: "fashion" },
-            ].map((cat, idx) => (
+            {[{ name: "Electronics", path: "electronics" }].map((cat, idx) => (
               <motion.a
                 key={cat.path}
                 href={`/category/${cat.path}`}
@@ -127,7 +124,7 @@ export default function Footer() {
               </motion.a>
             ))}
             <p className="text-xs text-gray-500 dark:text-gray-500 mt-3">
-              Curated collections for style & tech
+              Curated collections for everyday shopping
             </p>
           </div>
         </motion.div>
