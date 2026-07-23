@@ -26,7 +26,8 @@ export default function Contact() {
               <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
                 For general support, email{" "}
                 <strong>support@shophub.example.com</strong>. For urgent order
-                issues call <strong>+250 788 243 550</strong>.
+                issues call <strong>+250 788 914 228 • +250 723 081 798</strong>
+                .
               </p>
 
               <div className="mt-4 space-y-3 text-sm text-stone-600 dark:text-stone-300">
@@ -34,7 +35,7 @@ export default function Contact() {
                   <MapPin size={16} /> Kigali, Rwanda
                 </div>
                 <div className="flex items-center gap-2">
-                  <Phone size={16} /> +250 788 243 550
+                  <Phone size={16} /> +250 788 914 228 • +250 723 081 798
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail size={16} /> support@shophub.example.com

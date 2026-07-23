@@ -170,7 +170,8 @@ export default function Footer() {
               Contact Info
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Brussels, Belgium • +32 2 123 4567 • info@shophub.example.com
+              Kigali, Rwanda • +250 788 914 228 • +250 723 081 798 •
+              info@shophub.example.com
             </div>
           </div>
 

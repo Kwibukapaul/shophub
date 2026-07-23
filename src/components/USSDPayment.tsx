@@ -88,7 +88,7 @@ export default function USSDPayment({ amount, orderId, onClose }: Props) {
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="e.g. 250788123456"
+          placeholder="e.g. 250786531080"
           className="mb-4 w-full rounded border px-3 py-2 text-slate-900 dark:bg-gray-700 dark:text-white"
         />
 

@@ -108,7 +108,7 @@ export default function Navigation({ userProfile }: NavigationProps) {
   };
 
   const handleGetDelivery = () => {
-    const supplierPhone = "+250788243550";
+    const supplierPhone = "+2500725348775";
     const whatsappUrl = `https://wa.me/${supplierPhone.replace(/[^0-9]/g, "")}`;
 
     if (typeof window !== "undefined") {

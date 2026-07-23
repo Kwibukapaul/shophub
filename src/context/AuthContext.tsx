@@ -11,7 +11,7 @@ interface ProfileUpdates {
   profile_image_url?: string;
 }
 
-type Role = "admin" | "store_manager" | "user" | null;
+type Role = "admin" | "store_manager" | "customer" | null;
 
 interface AuthContextType {
   // single source of truth
@@ -261,6 +261,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setStateSafe({
             session: null,
             user: null,
+            profile: null,
+            role: null,
+            storeId: null,
+            permissions: null,
             loading: false,
             initialized: true,
           });
@@ -320,11 +324,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } catch (err) {
           console.error("Background profile/role load failed:", err);
-          setStateSafe({ loading: false, initialized: true });
+          setStateSafe({
+            session: null,
+            user: null,
+            profile: null,
+            role: null,
+            storeId: null,
+            permissions: null,
+            loading: false,
+            initialized: true,
+          });
         }
       } catch (err) {
         console.error("Auth init failed:", err);
-        setStateSafe({ loading: false, initialized: true });
+        setStateSafe({
+          session: null,
+          user: null,
+          profile: null,
+          role: null,
+          storeId: null,
+          permissions: null,
+          loading: false,
+          initialized: true,
+        });
       }
     };
 
@@ -352,6 +374,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             profile: null,
             role: null,
             storeId: null,
+            permissions: null,
             loading: false,
             initialized: true,
           });
@@ -424,11 +447,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           } catch (err) {
             console.error("Auth state listener failed:", err);
-            setStateSafe({ loading: false, initialized: true });
+            setStateSafe({
+              session: null,
+              user: null,
+              profile: null,
+              role: null,
+              storeId: null,
+              permissions: null,
+              loading: false,
+              initialized: true,
+            });
           }
         } catch (error) {
           console.error("Auth state handler failed:", error);
-          setStateSafe({ loading: false, initialized: true });
+          setStateSafe({
+            session: null,
+            user: null,
+            profile: null,
+            role: null,
+            storeId: null,
+            permissions: null,
+            loading: false,
+            initialized: true,
+          });
         }
       },
     );
@@ -551,6 +592,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       profile: null,
       role: null,
       storeId: null,
+      permissions: null,
     });
   };
 

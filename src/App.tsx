@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
 import { useAuth } from "./context/useAuth";
 import { getDashboardForRole } from "./lib/roles";
+import { useIdleLogout } from "./hooks/useIdleLogout";
 import { useTheme } from "./context/ThemeContext";
 
 import Navigation from "./components/Navigation";
@@ -33,10 +34,16 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Footer from "./components/Footer";
 
+const IDLE_TIMEOUT_MS = 20 * 60 * 1000;
+
 function App() {
   const { session, role, storeId, logout, signOut, userProfile } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
+
+  useIdleLogout(!!session, IDLE_TIMEOUT_MS, () => {
+    (logout || signOut)().finally(() => navigate("/", { replace: true }));
+  });
 
   const renderWithBoundary = (resetKey: string, element: ReactNode) => (
     <ErrorBoundary resetKey={resetKey}>{element}</ErrorBoundary>
@@ -88,7 +95,10 @@ function App() {
               />,
             )}
           />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          <Route
+            path="*"
+            element={<Navigate to={getDashboardForRole(role)} replace />}
+          />
         </Routes>
       </ThemeProvider>
     );
@@ -112,7 +122,10 @@ function App() {
               />,
             )}
           />
-          <Route path="*" element={<Navigate to="/store-manager" replace />} />
+          <Route
+            path="*"
+            element={<Navigate to={getDashboardForRole(role)} replace />}
+          />
         </Routes>
       </ThemeProvider>
     );
